@@ -98,7 +98,10 @@
       <section id="panelArea" hidden>
         <div class="admin-head">
           <div><p class="micro">GESTÃO DA BARBEARIA</p><h1>CONTROLE DA <em>AGENDA.</em></h1><p>Reservas, horários e serviços em um só lugar.</p></div>
-          <div class="admin-actions"><button id="refreshAll" class="admin-btn" type="button">ATUALIZAR DADOS ↻</button></div>
+          <div class="admin-actions">
+            <button id="refreshAll" class="admin-btn" type="button">ATUALIZAR DADOS ↻</button>
+            <button id="resetTestData" class="admin-btn danger" type="button">LIMPAR DADOS DE TESTE</button>
+          </div>
         </div>
         <div class="admin-stat-row">
           <div class="admin-stat"><strong id="statToday">—</strong><span>RESERVAS HOJE</span></div>
@@ -279,6 +282,37 @@
       message('loginMessage','Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha. Confira também o spam.');
     });
     $('#logoutBtn').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
+
+    $('#resetTestData').addEventListener('click', async () => {
+      const confirmed = confirm(
+        'ATENÇÃO: isso apagará TODAS as reservas (confirmadas, concluídas, canceladas e ausências) e TODOS os bloqueios. Profissionais, serviços, preços, expediente e logins serão preservados. Deseja continuar?'
+      );
+      if (!confirmed) return;
+
+      const typed = prompt('Para confirmar, digite LIMPAR:');
+      if (typed !== 'LIMPAR') {
+        message('globalMessage', 'Limpeza cancelada. Nenhum dado foi alterado.');
+        return;
+      }
+
+      const button = $('#resetTestData');
+      button.disabled = true;
+      button.textContent = 'LIMPANDO...';
+      message('globalMessage', 'Limpando reservas e bloqueios...');
+      try {
+        const { data, error } = await sb.rpc('alcapone_resetar_testes');
+        if (error) throw error;
+        await loadBase();
+        const reservas = Number(data?.reservas_apagadas ?? 0);
+        const bloqueios = Number(data?.bloqueios_apagados ?? 0);
+        message('globalMessage', `Limpeza concluída: ${reservas} reserva(s) e ${bloqueios} bloqueio(s) removido(s).`);
+      } catch (err) {
+        message('globalMessage', `Não foi possível limpar os dados: ${err.message}`, false);
+      } finally {
+        button.disabled = false;
+        button.textContent = 'LIMPAR DADOS DE TESTE';
+      }
+    });
 
     async function loadBase(){
       const [p,s]=await Promise.all([
