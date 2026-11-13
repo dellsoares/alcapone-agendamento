@@ -10,3 +10,27 @@
 @media(max-width:940px){.hero-layout{grid-template-columns:1fr;gap:40px}.hero-copy{padding-top:20px}.hero-copy h1{font-size:clamp(70px,11vw,106px)}.hero-desc{max-width:590px}.booking-shell{max-width:780px;justify-self:stretch}.booking-hero{padding-top:50px}.hero-proof{margin-top:25px}.hero-note{margin-top:24px}.how-section>.wrap{grid-template-columns:1fr;gap:10px}.topbar nav{gap:18px}}
 @media(max-width:620px){.wrap{width:calc(100% - 30px)}.topbar{height:72px}.brand img{height:43px;width:43px}.brand>span{font-size:27px}.brand small{font-size:7px;letter-spacing:4.5px}.topbar nav .top-link{display:none}.top-cta{font-size:9px;padding:11px 9px}.booking-hero{padding:35px 0 64px}.hero-copy h1{font-size:clamp(67px,15vw,90px);margin:14px 0 18px}.hero-copy>.micro{margin-top:28px}.hero-desc{font-size:13px}.hero-proof strong{font-size:30px}.hero-proof>div{padding-right:9px;margin-right:9px}.hero-proof span{font-size:7px}.hero-note{font-size:10px}.shell-header{padding:23px 17px}.shell-header h2{font-size:37px}.shell-mark{height:42px;width:42px;line-height:42px;font-size:24px}.steps{padding:0 4px}.steps li{padding:14px 1px;display:flex;flex-direction:column;gap:1px}.steps li>span{font-size:21px}.steps li small{font-size:7px}.shell-body{padding:24px 16px 18px}.step-heading h3{font-size:33px}.choice{padding:12px;min-height:110px}.choice strong{font-size:20px}.choice-foot b{font-size:11px}.choice-foot small{font-size:9px}.pro-options{gap:9px}.pro-choice img{height:210px}.pro-choice>span{padding:12px 10px 0}.pro-choice strong{font-size:26px}.days-strip{gap:4px}.day-pill{min-height:67px}.day-pill strong{font-size:24px}.day-pill small{font-size:8px}.time-buttons{grid-template-columns:repeat(4,minmax(0,1fr))}.shell-footer{padding:16px;gap:6px;flex-wrap:wrap}.step-hint{font-size:9px;flex:1 1 100%;order:3}.next-btn,.action-primary{padding:13px 14px;font-size:10px}.back-btn{font-size:9px}.field-grid{grid-template-columns:1fr}.footer-main{flex-direction:column;align-items:flex-start;padding:28px 0}.footer-small{flex-direction:column;gap:10px}.how-section{padding:55px 0}.how-section h2{font-size:47px}.summary-row{font-size:10px}.my-page,.admin-page{padding-top:60px}.my-page h1,.admin-page h1{font-size:55px}.admin-mini-grid{grid-template-columns:1fr}.admin-service-edit{grid-template-columns:1fr 1fr}.admin-hours-row{grid-template-columns:50px 1fr 1fr 1fr}.admin-card{padding:18px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Refinamento visual Al Capone — nomes, navegação e confirmação */
+.pro-choice{color:var(--light);-webkit-appearance:none;appearance:none;font-family:var(--font)}
+.pro-choice strong{display:block;color:#f5eee5!important;font:34px/.95 var(--display);letter-spacing:.02em}
+.pro-choice small{color:#c8a98d!important}
+.pro-choice:focus-visible{outline:2px solid var(--accent2);outline-offset:3px}
+.calendar-arrows{gap:9px}
+.calendar-arrows button{height:42px;width:42px;display:grid;place-items:center;border:1px solid #76543a;border-radius:2px;background:linear-gradient(145deg,#33251b,#211811);color:#e5b27f;transition:background .18s ease,border-color .18s ease,transform .18s ease}
+.calendar-arrows button svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
+.calendar-arrows button:hover:not(:disabled){background:#6b462c;border-color:#d09a69;transform:translateY(-1px)}
+.calendar-arrows button:focus-visible{outline:2px solid #e5b27f;outline-offset:3px}
+.calendar-arrows button:disabled{opacity:.28}
+.confirmation-actions{display:grid;gap:9px;margin:18px 0 12px}
+.confirmation-actions .action-primary,.confirmation-actions .action-secondary{width:100%;min-height:48px;justify-content:center;text-align:center;line-height:1.4}
+.confirmation-actions .action-secondary{display:flex;align-items:center;justify-content:center}
+.wizard-panel[data-panel="5"] .soft-note{max-width:560px;margin:13px auto 17px;line-height:1.7}
+@media(max-width:620px){
+  .pro-choice strong{font-size:25px}
+  .calendar-arrows{gap:7px}
+  .calendar-arrows button{width:40px;height:40px}
+  .confirmation-actions{gap:8px}
+  .confirmation-actions .action-primary,.confirmation-actions .action-secondary{min-height:46px;padding:12px 10px;font-size:9px;letter-spacing:.7px}
+}

@@ -118,6 +118,62 @@
     $('#summary').innerHTML=`<div class="summary-row"><span>SERVIÇO</span><strong>${esc(service.name)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(pro.name)}</strong></div><div class="summary-row"><span>DATA E HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div><div class="summary-row"><span>DURAÇÃO</span><strong>${service.duration} minutos</strong></div><div class="summary-row summary-total"><span>VALOR ${service.from_price?'INICIAL':'DO SERVIÇO'}</span><strong>${brl(service.price_cents)}</strong></div>`;
     $('#formError').hidden=true;
   }
+  function calendarDateParts(date, time, duration){
+    const start = new Date(`${date}T${time}:00-03:00`);
+    const end = new Date(start.getTime() + Number(duration || 30) * 60000);
+    const googleStamp = d => new Intl.DateTimeFormat('sv-SE',{
+      timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit',
+      hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'
+    }).format(d).replace(/[-:]/g,'').replace(' ','T');
+    const utcStamp = d => d.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');
+    return {start,end,googleStart:googleStamp(start),googleEnd:googleStamp(end),utcStart:utcStamp(start),utcEnd:utcStamp(end)};
+  }
+  function icsEscape(value){
+    return String(value ?? '').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/,/g,'\\,').replace(/;/g,'\\;');
+  }
+  function prepareConfirmationActions({payload,service,professional,clientName,phone}){
+    const {start,end,googleStart,googleEnd,utcStart,utcEnd}=calendarDateParts(booking.date,booking.time,service.duration);
+    const title=`Al Capone Barbearia — ${service.name}`;
+    const location='Rua Padre Eustáquio, 2160, Belo Horizonte/MG';
+    const code=payload.code || '';
+    const details=`Reserva ${code}\nCliente: ${clientName}\nServiço: ${service.name}\nProfissional: ${professional.name}\nDuração: ${service.duration} minutos\nCódigo: ${code}\nConsulte ou cancele: ${new URL(`minha.html?token=${encodeURIComponent(payload.token)}`,locationHref()).href}`;
+    const googleUrl='https://calendar.google.com/calendar/render?action=TEMPLATE'
+      +`&text=${encodeURIComponent(title)}`
+      +`&dates=${googleStart}/${googleEnd}`
+      +`&ctz=${encodeURIComponent('America/Sao_Paulo')}`
+      +`&details=${encodeURIComponent(details)}`
+      +`&location=${encodeURIComponent(location)}`;
+    $('#googleCalendarLink').href=googleUrl;
+
+    const icsLines=[
+      'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Al Capone Barbearia//Agendamento//PT-BR',
+      'CALSCALE:GREGORIAN','METHOD:PUBLISH','BEGIN:VEVENT',
+      `UID:${icsEscape(payload.token || code+'@alcapone')}`,
+      `DTSTAMP:${icsStamp(new Date())}`,
+      `DTSTART:${utcStart}`,`DTEND:${utcEnd}`,
+      `SUMMARY:${icsEscape(title)}`,
+      `DESCRIPTION:${icsEscape(details)}`,
+      `LOCATION:${icsEscape(location)}`,
+      'BEGIN:VALARM','TRIGGER:-PT1H','ACTION:DISPLAY','DESCRIPTION:Lembrete: seu horário na Al Capone é em 1 hora.','END:VALARM',
+      'BEGIN:VALARM','TRIGGER:-PT30M','ACTION:DISPLAY','DESCRIPTION:Lembrete: seu horário na Al Capone é em 30 minutos.','END:VALARM',
+      'END:VEVENT','END:VCALENDAR'
+    ];
+    $('#downloadCalendar').onclick=()=>{
+      const blob=new Blob([icsLines.join('\r\n')+'\r\n'],{type:'text/calendar;charset=utf-8'});
+      const url=URL.createObjectURL(blob);const a=document.createElement('a');
+      a.href=url;a.download=`al-capone-reserva-${String(code||'horario').replace(/[^a-z0-9_-]/gi,'')}.ics`;
+      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+    };
+    const digits=String(phone||'').replace(/\D/g,'');
+    const whatsappNumber=digits.startsWith('55')?digits:`55${digits}`;
+    const dateLabel=formattedDate(booking.date);
+    const message=`Olá! Quero guardar meu agendamento na Al Capone.\n\nReserva: ${code}\nServiço: ${service.name}\nProfissional: ${professional.name}\nData: ${dateLabel}\nHorário: ${booking.time}\nDuração: ${service.duration} minutos\nEndereço: ${location}\n\nLink para consultar/cancelar: ${new URL(`minha.html?token=${encodeURIComponent(payload.token)}`,locationHref()).href}`;
+    $('#whatsappSummary').href=`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+    $('#whatsappSummary').setAttribute('aria-label','Abrir WhatsApp com o resumo da reserva para enviar para seu próprio número');
+  }
+  function icsStamp(date){return date.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');}
+  function locationHref(){return window.location.href;}
+
   async function submit(){
     const err=$('#formError');
     const fullName=$('#clientName').value.trim(),phone=$('#clientPhone').value.trim(),email=$('#clientEmail').value.trim();
@@ -133,6 +189,7 @@
       });
       $('#confirmationInfo').innerHTML=`<div class="summary-row"><span>CÓDIGO</span><strong>${esc(payload.code)}</strong></div><div class="summary-row"><span>SERVIÇO</span><strong>${esc(payload.service)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(payload.professional)}</strong></div><div class="summary-row"><span>DATA/HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div>`;
       $('#manageLink').href='minha.html?token='+encodeURIComponent(payload.token);
+      prepareConfirmationActions({payload,service:state().service,professional:state().pro,clientName:fullName,phone});
       go(5);
     }catch(e){err.textContent=e.message;err.hidden=false;updateNext();}
   }

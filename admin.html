@@ -91,6 +91,7 @@
           <label for="password">SENHA</label><input id="password" type="password" autocomplete="current-password" required placeholder="Sua senha">
           <button class="admin-btn primary" type="submit" style="width:100%;margin-top:16px">ENTRAR NO PAINEL ↗</button>
         </form>
+        <p style="margin:13px 0 0;font-size:11px"><a href="#" id="forgotPasswordLink" style="color:#e5b27f;text-decoration:underline;text-underline-offset:3px">Esqueci minha senha</a></p>
         <p id="loginMessage" class="admin-note" role="alert"></p>
       </section>
 
@@ -217,7 +218,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-  (async () => {
+  (() => {
     'use strict';
     const SUPABASE_URL = 'https://vsqvzfwlndkwmajkvtuc.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_SwpbISATzFXp2N8T6IRPIA_V6k6Xecg';
@@ -266,6 +267,16 @@
       const {error}=await sb.auth.signInWithPassword({email:$('#email').value.trim(),password:$('#password').value});
       if(error){message('loginMessage',error.message==='Invalid login credentials'?'E-mail ou senha incorretos.':error.message,false);return;}
       try{await showPanel();message('loginMessage','');}catch(err){message('loginMessage',err.message,false);}
+    });
+    $('#forgotPasswordLink').addEventListener('click',async e=>{
+      e.preventDefault();
+      const email=$('#email').value.trim();
+      if(!email){message('loginMessage','Digite seu e-mail no campo acima e clique em “Esqueci minha senha”.',false);$('#email').focus();return;}
+      message('loginMessage','Enviando link de recuperação...');
+      const redirectTo=new URL('recuperar-senha.html',location.href).href;
+      const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo});
+      if(error){message('loginMessage',error.message,false);return;}
+      message('loginMessage','Se o e-mail estiver cadastrado, você receberá um link para criar uma nova senha. Confira também o spam.');
     });
     $('#logoutBtn').addEventListener('click',async()=>{await sb.auth.signOut();location.reload();});
 

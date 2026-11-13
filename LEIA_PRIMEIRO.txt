@@ -21,3 +21,17 @@ Fotos, logo e visual seguem a versão criada anteriormente.
 AVISO: o banco e a interface foram preparados e validados estaticamente, mas
 não foram testados contra o seu projeto Supabase (não tenho acesso autenticado).
 A oferta gratuita do Supabase tem limites e pode pausar o projeto por inatividade.
+
+
+ATUALIZAÇÃO VISUAL E CONFIRMAÇÃO:
+- Nomes dos profissionais padronizados na paleta terrosa.
+- Setas do calendário redesenhadas.
+- Após confirmar, o cliente pode abrir o Google Agenda, baixar um arquivo .ics com dois alertas (1 hora e 30 minutos antes, se o app aceitar) e abrir o WhatsApp com o resumo pronto para enviar ao próprio número.
+- O envio do WhatsApp exige que o cliente toque em ENVIAR.
+- O link do Google Agenda cria o evento; as notificações do Google dependem das preferências da conta.
+
+RECUPERAÇÃO DE SENHA DO PAINEL:
+- O admin.html agora tem “Esqueci minha senha”.
+- Adicione no Supabase > Authentication > URL Configuration, em Redirect URLs, este endereço:
+  https://dellsoares.github.io/alcapone-agendamento/recuperar-senha.html
+- A página recuperar-senha.html permite definir a nova senha pelo link recebido por e-mail.

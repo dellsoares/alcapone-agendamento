@@ -47,7 +47,7 @@
             </section>
             <section class="wizard-panel" data-panel="3">
               <div class="step-heading"><span class="micro">PASSO 03 / 04</span><h3>RESERVE SEU <em>MELHOR MOMENTO.</em></h3><p>Os horários exibidos refletem a agenda atual do profissional.</p></div>
-              <div class="calendar-bar"><div><span class="micro">ESCOLHA O DIA</span><strong id="monthTitle">—</strong></div><div class="calendar-arrows"><button id="datePrev" type="button" aria-label="Datas anteriores">←</button><button id="dateNext" type="button" aria-label="Próximas datas">→</button></div></div>
+              <div class="calendar-bar"><div><span class="micro">ESCOLHA O DIA</span><strong id="monthTitle">—</strong></div><div class="calendar-arrows"><button id="datePrev" type="button" aria-label="Datas anteriores"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><button id="dateNext" type="button" aria-label="Próximas datas"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button></div></div>
               <div class="days-strip" id="daysStrip" aria-label="Escolha a data"></div>
               <div class="times-heading"><span class="micro">HORÁRIOS DISPONÍVEIS</span><span id="availabilityMeta">—</span></div>
               <div class="slots-area" id="slotArea" aria-live="polite"><div class="empty-note">Escolha uma data para consultar os horários.</div></div>
@@ -68,8 +68,13 @@
               <span class="micro">RESERVA CONFIRMADA</span><h3>HORÁRIO <em>GARANTIDO.</em></h3>
               <p>Seu agendamento foi registrado na agenda da Al Capone.</p>
               <div class="summary" id="confirmationInfo"></div>
-              <a id="manageLink" href="minha.html" class="action-primary">VER / CANCELAR MINHA RESERVA <span>↗</span></a>
-              <p class="soft-note">Guarde este link para consultar ou cancelar sua reserva. Não há envio automático de WhatsApp nesta versão.</p>
+              <div class="confirmation-actions">
+                <a id="googleCalendarLink" href="#" class="action-primary" target="_blank" rel="noopener noreferrer">ADICIONAR AO GOOGLE AGENDA <span>↗</span></a>
+                <button id="downloadCalendar" type="button" class="action-secondary">SALVAR NA AGENDA DO CELULAR (.ICS)</button>
+                <a id="whatsappSummary" href="#" class="action-secondary" target="_blank" rel="noopener noreferrer">ENVIAR RESUMO PARA MEU WHATSAPP ↗</a>
+                <a id="manageLink" href="minha.html" class="action-secondary">VER / CANCELAR MINHA RESERVA ↗</a>
+              </div>
+              <p class="soft-note">O arquivo de agenda inclui alertas de 1 hora e 30 minutos antes, quando o aplicativo de calendário aceita esses avisos. No Google Agenda, os alertas também respeitam as notificações configuradas na sua conta. No WhatsApp, confira o resumo e toque em enviar.</p>
               <button id="newBooking" type="button" class="action-secondary">FAZER NOVO AGENDAMENTO ↗</button>
             </section>
           </div>
