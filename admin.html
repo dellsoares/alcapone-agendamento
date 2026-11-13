@@ -5,7 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="robots" content="noindex,nofollow">
   <meta name="theme-color" content="#17110d">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Al Capone">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Painel administrativo | Al Capone</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./assets/app-icon-192.png">
+  <link rel="apple-touch-icon" href="./assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -70,6 +77,101 @@
     [hidden]{display:none!important}
     @media(max-width:800px){.admin-grid{grid-template-columns:1fr}.admin-service-row{grid-template-columns:1fr 1fr}.admin-service-row>div:first-child{grid-column:1/-1}.admin-hours-row{grid-template-columns:85px 90px 1fr 1fr}.admin-head{align-items:flex-start;flex-direction:column}.admin-top-actions{width:100%;justify-content:space-between}}
     @media(max-width:560px){.admin-wrap{width:calc(100% - 24px)}.admin-page{padding-top:30px}.admin-card{padding:16px}.admin-fields{grid-template-columns:1fr}.admin-stat-row{gap:7px}.admin-stat{padding:10px}.admin-stat strong{font-size:28px}.admin-stat span{font-size:8px}.admin-hours-row{grid-template-columns:1fr 1fr}.admin-hours-row>strong{grid-column:1/-1}.admin-tabs button{flex:1;padding:12px 8px;font-size:9px}.admin-footer{flex-direction:column}}
+
+    /* Painel mobile: navegação e controles confortáveis ao toque */
+    .admin-actions .admin-btn{min-height:44px}
+    .admin-table td[data-label]::before{content:none}
+    .admin-support{color:#d8c2ad}
+    .admin-support a{color:#e5b27f;text-decoration:underline;text-underline-offset:3px;font-weight:800}
+    @media(max-width:700px){
+      .wrap{width:calc(100% - 24px)}
+      .topbar{height:68px}
+      .topbar-inner{gap:8px}
+      .brand{gap:9px;min-width:0}
+      .brand img{width:42px;height:42px}
+      .brand>span{font-size:27px;white-space:nowrap}
+      .brand small{font-size:7px;letter-spacing:3.4px}
+      .admin-top-actions{width:auto;max-width:48%;gap:6px;justify-content:flex-end}
+      .admin-top-actions span{max-width:145px;overflow-wrap:anywhere;text-align:right;font-size:9px}
+      .admin-top-actions .admin-btn{padding:9px 10px;min-height:40px}
+      .admin-wrap{width:calc(100% - 24px)}
+      .admin-page{min-height:calc(100svh - 68px);padding:24px 0 40px}
+      .admin-head{display:flex;align-items:stretch;gap:14px;margin-bottom:18px}
+      .admin-head h1{font-size:clamp(39px,10vw,54px);line-height:.9}
+      .admin-head p{font-size:11px}
+      .admin-head>div:first-child{max-width:100%}
+      .admin-head .admin-actions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:8px}
+      .admin-head .admin-actions .admin-btn{width:100%;padding:11px 7px;font-size:9px;letter-spacing:.35px;min-height:46px}
+      .admin-stat-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:12px 0}
+      .admin-stat{padding:10px 8px;min-width:0}
+      .admin-stat strong{font-size:clamp(23px,6vw,30px)}
+      .admin-stat span{font-size:7px;line-height:1.35;letter-spacing:.45px}
+      .admin-tabs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin:18px 0}
+      .admin-tabs button{width:100%;min-height:46px;padding:10px 7px;font-size:9px;letter-spacing:.45px}
+      .admin-tabs button:last-child{grid-column:1/-1}
+      .admin-card{padding:14px;margin:12px 0}
+      .admin-card h2{font-size:29px}
+      .admin-card p{font-size:11px;line-height:1.6}
+      .admin-fields{grid-template-columns:1fr;gap:8px}
+      .admin-form input,.admin-card input,.admin-card select,.admin-card textarea,.admin-modal input,.admin-modal select{
+        min-height:46px;font-size:16px;padding:11px 12px;
+      }
+      .admin-card label,.admin-form label{font-size:9px;margin-top:10px}
+      .admin-btn{min-height:44px;padding:11px 12px;font-size:10px}
+      .admin-tools{display:grid;grid-template-columns:1fr;gap:8px;align-items:stretch}
+      .admin-tools>div{min-width:0;width:100%}
+      .admin-tools>button{width:100%}
+      .admin-table-wrap{overflow:visible}
+      .admin-table{display:block;width:100%;min-width:0;border-collapse:separate;border-spacing:0}
+      .admin-table thead{display:none}
+      .admin-table tbody{display:grid;gap:10px}
+      .admin-table tr{
+        display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 12px;
+        border:1px solid #4c3929;background:#1b140f;padding:7px 11px;min-width:0
+      }
+      .admin-table td{
+        display:flex;flex-direction:column;gap:4px;min-width:0;
+        border:0;padding:9px 0;font-size:11px;overflow-wrap:anywhere
+      }
+      .admin-table td[data-label]::before{
+        content:attr(data-label);display:block;color:#b88e69;font-size:8px;
+        font-weight:800;letter-spacing:.7px;margin-bottom:2px
+      }
+      .admin-table td:nth-child(2),.admin-table td:nth-child(6){grid-column:1/-1}
+      .admin-table td[colspan]{grid-column:1/-1;display:block;text-align:center;padding:15px 4px}
+      .admin-table td[colspan]::before{content:none}
+      .admin-table td small{font-size:9px;line-height:1.45;overflow-wrap:anywhere}
+      .admin-table .admin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+      .admin-table .admin-actions .admin-btn{width:100%;min-height:38px;padding:8px 5px;font-size:8px}
+      .admin-service-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .admin-service-row>div:first-child{grid-column:1/-1}
+      .admin-service-row>button{width:100%;min-height:42px}
+      .admin-hours-row{
+        grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+        border:1px solid #4b3628;padding:11px;margin:10px 0
+      }
+      .admin-hours-row>strong{grid-column:1/-1;font-size:12px;color:#e7c5a4}
+      .admin-hours-row .admin-check{grid-column:1/-1;margin:0}
+      .admin-hours-row input[type=time]{min-width:0}
+      .admin-list-item{align-items:flex-start;flex-direction:column;gap:8px}
+      .admin-modal{width:calc(100% - 20px);max-width:520px;max-height:90svh;overflow:auto;padding:17px}
+      .admin-modal h2{font-size:29px}
+      .admin-modal menu{display:grid;grid-template-columns:1fr 1fr}
+      .admin-modal menu button{min-height:44px;padding:10px 6px;font-size:9px}
+      .admin-footer{display:flex;flex-direction:column;align-items:center;text-align:center;gap:9px;padding:18px 0 calc(18px + env(safe-area-inset-bottom));font-size:10px}
+      .admin-login{margin:22px auto;padding:18px}
+      .admin-login h1{font-size:clamp(39px,10vw,50px)!important}
+    }
+    @media(max-width:380px){
+      .brand>span{font-size:23px}
+      .brand small{font-size:6px;letter-spacing:2.8px}
+      .admin-top-actions span{display:none}
+      .admin-stat{padding:8px 5px}
+      .admin-stat span{font-size:6.5px}
+      .admin-head .admin-actions .admin-btn{font-size:8px}
+      .admin-table tr{gap:0 8px;padding:6px 8px}
+    }
+
   </style>
 </head>
 <body>
@@ -217,8 +319,21 @@
     </form>
   </dialog>
 
-  <footer class="site-footer"><div class="admin-wrap admin-footer"><span>Painel restrito · Al Capone Barbearia</span><span>Criado por <a href="https://wendellsoares.jor.br" target="_blank" rel="noopener noreferrer">Wendell Soares ↗</a></span></div></footer>
+  <footer class="site-footer">
+    <div class="admin-wrap admin-footer">
+      <span>Painel restrito · Al Capone Barbearia</span>
+      <span class="admin-support">Dúvidas? Fale com o <a href="https://wa.me/5531983073854" target="_blank" rel="noopener noreferrer">Wendell</a>.</span>
+      <span>Criado por <a href="https://wendellsoares.jor.br" target="_blank" rel="noopener noreferrer">Wendell Soares ↗</a></span>
+    </div>
+  </footer>
 
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
   (async () => {
@@ -351,7 +466,7 @@
         const s=serviceMap.get(b.servico_id)||{},p=proMap.get(b.profissional_id)||'—';
         const status=b.status;
         const actions=status==='confirmado'?`<div class="admin-actions"><button class="admin-btn small" data-act="done" data-id="${b.id}">CONCLUIR</button><button class="admin-btn small" data-act="absent" data-id="${b.id}">FALTA</button><button class="admin-btn small" data-act="move" data-id="${b.id}">REMARCAR</button><button class="admin-btn small danger" data-act="cancel" data-id="${b.id}">CANCELAR</button></div>`:'—';
-        return `<tr><td><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}</small></td><td>${esc(p)}</td><td>${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min · ${money(s.preco)}</small></td><td><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td>${actions}</td></tr>`;
+        return `<tr><td data-label="HORÁRIO"><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td data-label="CLIENTE"><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}</small></td><td data-label="PROFISSIONAL">${esc(p)}</td><td data-label="SERVIÇO">${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min · ${money(s.preco)}</small></td><td data-label="STATUS"><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
       }).join('')||'<tr><td colspan="6">Nenhuma reserva encontrada nesta data.</td></tr>';
       $$('[data-act]', $('#bookRows')).forEach(btn=>btn.addEventListener('click',()=>bookingAction(btn.dataset.act,btn.dataset.id)));
     }
