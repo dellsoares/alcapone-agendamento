@@ -164,12 +164,16 @@
       a.href=url;a.download=`al-capone-reserva-${String(code||'horario').replace(/[^a-z0-9_-]/gi,'')}.ics`;
       document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
     };
-    const digits=String(phone||'').replace(/\D/g,'');
-    const whatsappNumber=digits.startsWith('55')?digits:`55${digits}`;
+    let digits=String(phone||'').replace(/\D/g,'');
+    if(digits.startsWith('55')) digits=digits.slice(2);
+    digits=digits.replace(/^0/,'');
+    const whatsappNumber=`55${digits}`;
     const dateLabel=formattedDate(booking.date);
-    const message=`Olá! Quero guardar meu agendamento na Al Capone.\n\nReserva: ${code}\nServiço: ${service.name}\nProfissional: ${professional.name}\nData: ${dateLabel}\nHorário: ${booking.time}\nDuração: ${service.duration} minutos\nEndereço: ${location}\n\nLink para consultar/cancelar: ${new URL(`minha.html?token=${encodeURIComponent(payload.token)}`,locationHref()).href}`;
+    const valueLabel=`${service.from_price?'A partir de ':''}${brl(service.price_cents)}`;
+    const manageUrl=new URL(`minha.html?token=${encodeURIComponent(payload.token)}`,locationHref()).href;
+    const message=`AGENDAMENTO CONFIRMADO — AL CAPONE BARBEARIA\n\nHora: ${booking.time}\nData: ${dateLabel}\nProfissional: ${professional.name}\nServiço: ${service.name}\nValor: ${valueLabel}\n\nCódigo da reserva: ${code}\nConsultar ou cancelar: ${manageUrl}`;
     $('#whatsappSummary').href=`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-    $('#whatsappSummary').setAttribute('aria-label','Abrir WhatsApp com o resumo da reserva para enviar para seu próprio número');
+    $('#whatsappSummary').setAttribute('aria-label','Abrir uma conversa com seu próprio número no WhatsApp, com o resumo do agendamento preenchido. Você só precisa tocar em Enviar.');
   }
   function icsStamp(date){return date.toISOString().replace(/[-:]/g,'').replace(/\.\d{3}Z$/,'Z');}
   function locationHref(){return window.location.href;}
