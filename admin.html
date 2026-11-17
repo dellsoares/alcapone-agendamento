@@ -1154,8 +1154,13 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
       const id=$('#collaboratorId').value,role=$('#collaboratorRole').value,password=$('#collaboratorPassword').value;
       const payload={action:id?'update':'create',id:id||undefined,nome:$('#collaboratorName').value.trim(),email:$('#collaboratorEmail').value.trim().toLowerCase(),perfil:role,permissoes:selectedCollaboratorPermissions(),profissional_id:role==='BARBEIRO'?($('#collaboratorProfessional').value||null):null};
       if(!payload.nome||!payload.email){message('collaboratorMessage','Informe nome e e-mail.',false);return;}
-      if(!id&&password.length<8){message('collaboratorMessage','A senha inicial precisa ter pelo menos 8 caracteres.',false);return;}
-      if(id&&password)payload.password=password;
+      if(!id){
+        if(password.length<8){message('collaboratorMessage','A senha inicial precisa ter pelo menos 8 caracteres.',false);return;}
+        payload.password=password;
+      }else if(password){
+        if(password.length<8){message('collaboratorMessage','A nova senha precisa ter pelo menos 8 caracteres.',false);return;}
+        payload.password=password;
+      }
       if(role==='BARBEIRO'&&!payload.profissional_id){message('collaboratorMessage','Selecione o profissional vinculado ao acesso de barbeiro.',false);return;}
       if(role==='MASTER')payload.permissoes=rolePresets.MASTER;
       message('collaboratorMessage',id?'Atualizando colaborador...':'Criando acesso...');
