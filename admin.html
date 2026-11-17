@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=vip-relacionamento-1">
   <style>
     .admin-wrap{width:min(1280px,calc(100% - 36px));margin:0 auto}
     .admin-page{min-height:82vh;padding:48px 0 80px;background:radial-gradient(circle at 100% 0%,#48301f 0%,transparent 46%),#16110d}
@@ -172,6 +172,17 @@
       .admin-table tr{gap:0 8px;padding:6px 8px}
     }
 
+
+    .admin-help{font-size:10px!important;color:#a99582!important;margin:9px 0 13px!important;line-height:1.7}
+    .admin-help code{color:#e2b17f;background:#17110d;border:1px solid #513a29;padding:2px 5px}
+    .wa-message-preview{margin-top:15px;padding:15px;background:#17110d;border:1px solid #5c412d}
+    .wa-message-preview>span{display:block;color:#c99a6d;font-size:9px;letter-spacing:1px;font-weight:800}
+    .wa-message-preview p{white-space:pre-wrap;min-height:70px;margin:10px 0 0;color:#f0e2d4;font-size:12px;line-height:1.7}
+    .vip-level-chip{display:inline-block;padding:5px 8px;border:1px solid #9b744d;background:#241a13;color:#e9c69f;font-size:9px;font-weight:900;letter-spacing:.6px;white-space:nowrap}
+    .vip-level-chip.level-prata{border-color:#8d9295;color:#d5d9dc}
+    .vip-level-chip.level-ouro{border-color:#c29a4d;color:#f0cf85}
+    .vip-level-chip.level-platina{border-color:#a7aeb7;color:#e4e8ee}
+    .vip-level-chip.level-black{border-color:#6e6257;color:#f0e6dc;background:#110d0a}
   </style>
 </head>
 <body>
@@ -344,13 +355,15 @@
 
         <section class="admin-section" data-section="vip">
           <div class="admin-card">
-            <h2>CADASTRAR CLIENTE VIP</h2>
-            <p>O código é individual e fica vinculado ao WhatsApp informado. Gere um código e entregue-o diretamente ao cliente.</p>
+            <h2>CADASTRO DE CLIENTES VIP</h2>
+            <p>Registre os dados do cliente, defina o nível de relacionamento e gere um código individual vinculado ao WhatsApp.</p>
             <form id="vipClientForm">
               <input type="hidden" id="vipClientId">
               <div class="admin-fields">
                 <div><label for="vipClientName">NOME DO CLIENTE</label><input id="vipClientName" maxlength="100" required placeholder="Nome completo"></div>
                 <div><label for="vipClientPhone">WHATSAPP COM DDD</label><input id="vipClientPhone" type="tel" maxlength="25" required placeholder="(31) 99999-9999"></div>
+                <div><label for="vipClientLevel">NÍVEL VIP</label><select id="vipClientLevel" required><option value="Bronze">BRONZE</option><option value="Prata">PRATA</option><option value="Ouro">OURO</option><option value="Platina">PLATINA</option><option value="Black">BLACK</option></select></div>
+                <div><label for="vipClientBirthday">DATA DE ANIVERSÁRIO</label><input id="vipClientBirthday" type="date"></div>
                 <div><label for="vipClientCode">CÓDIGO VIP INDIVIDUAL</label><input id="vipClientCode" maxlength="30" required placeholder="VIP-XXXXXXXX" autocapitalize="characters"></div>
                 <div style="display:flex;align-items:end"><button id="generateVipCode" class="admin-btn" type="button" style="width:100%">GERAR CÓDIGO ↻</button></div>
                 <div><label for="vipDiscountType">BENEFÍCIO DE DESCONTO</label><select id="vipDiscountType"><option value="nenhum">SEM DESCONTO FIXO</option><option value="percentual">PORCENTAGEM (%)</option><option value="fixo">VALOR FIXO (R$)</option></select></div>
@@ -363,9 +376,29 @@
             <p id="vipClientMessage" class="admin-note" role="status"></p>
           </div>
           <div class="admin-card">
-            <h2>CLIENTES VIP CADASTRADOS</h2>
-            <p>Consulte os códigos, benefícios, pontuação e situação de cada cliente.</p>
-            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>CLIENTE</th><th>WHATSAPP</th><th>CÓDIGO</th><th>DESCONTO</th><th>PONTOS</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="vipClientRows"><tr><td colspan="7">Carregando clientes VIP...</td></tr></tbody></table></div>
+            <h2>GESTÃO DE CLIENTES VIP</h2>
+            <p>Gerencie nome, WhatsApp, observações, nível de relacionamento, aniversário, código, benefícios e pontuação.</p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>CLIENTE / OBSERVAÇÃO</th><th>WHATSAPP</th><th>NÍVEL VIP</th><th>ANIVERSÁRIO</th><th>CÓDIGO</th><th>DESCONTO</th><th>PONTOS</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="vipClientRows"><tr><td colspan="9">Carregando clientes VIP...</td></tr></tbody></table></div>
+          </div>
+          <div class="admin-card" id="whatsappRelationshipCard">
+            <h2>CENTRAL DE MENSAGENS WHATSAPP</h2>
+            <p>Escolha um cliente, selecione o tipo de comunicação, ajuste o texto e abra a conversa com a mensagem preenchida. O envio é confirmado manualmente dentro do WhatsApp; não utiliza API.</p>
+            <div class="admin-fields">
+              <div><label for="waClientSelect">CLIENTE</label><select id="waClientSelect"><option value="">Selecione um cliente VIP</option></select></div>
+              <div><label for="waMessageType">TIPO DE MENSAGEM</label><select id="waMessageType"><option value="promo">PROMOÇÃO RELÂMPAGO</option><option value="date">DATA COMEMORATIVA</option><option value="birthday">ANIVERSÁRIO</option><option value="reminder">LEMBRETE</option><option value="hours">AVISO DE HORÁRIO</option></select></div>
+              <div><label id="waDetailLabel" for="waMessageDetail">OFERTA / DESCONTO</label><input id="waMessageDetail" maxlength="220" placeholder="Ex.: 20% de desconto em cortes"></div>
+              <div><label id="waDeadlineLabel" for="waMessageDeadline">VALIDADE DA PROMOÇÃO</label><input id="waMessageDeadline" maxlength="160" placeholder="Ex.: até sexta-feira, 27/11"></div>
+            </div>
+            <label for="waMessageTemplate">MENSAGEM PRONTA (EDITÁVEL)</label>
+            <textarea id="waMessageTemplate" rows="7" maxlength="2000"></textarea>
+            <p class="admin-help">Campos disponíveis no texto: <code>{nome}</code>, <code>{detalhe}</code> e <code>{prazo}</code>. Eles serão substituídos antes de abrir o WhatsApp.</p>
+            <div class="wa-message-preview"><span class="micro">PRÉVIA DA MENSAGEM</span><p id="waMessagePreview">Selecione um cliente para visualizar a mensagem.</p></div>
+            <div class="admin-actions" style="margin-top:14px">
+              <button id="saveWaTemplate" class="admin-btn" type="button">SALVAR MODELO NESTE NAVEGADOR</button>
+              <button id="resetWaTemplate" class="admin-btn" type="button">RESTAURAR MODELO PADRÃO</button>
+              <button id="openWaMessage" class="admin-btn primary" type="button">ABRIR WHATSAPP PARA ENVIAR ↗</button>
+            </div>
+            <p id="waMessageStatus" class="admin-note" role="status"></p>
           </div>
           <div class="admin-grid">
             <div class="admin-card">
@@ -793,7 +826,7 @@
     const vipCode=()=>{const bytes=new Uint8Array(5);crypto.getRandomValues(bytes);return 'VIP-'+[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();};
     function resetVipClientForm(){
       $('#vipClientForm').reset();editingVipClientId=null;$('#vipClientId').value='';$('#vipClientActive').checked=true;
-      $('#vipDiscountType').value='nenhum';$('#vipDiscountValue').value='0';$('#vipClientCode').value=vipCode();
+      $('#vipDiscountType').value='nenhum';$('#vipDiscountValue').value='0';$('#vipClientLevel').value='Bronze';$('#vipClientBirthday').value='';$('#vipClientCode').value=vipCode();
       $('#saveVipClient').textContent='CADASTRAR CLIENTE VIP ↗';$('#cancelVipClientEdit').hidden=true;
     }
     function vipDiscountLabel(type,value){if(type==='percentual')return `${Number(value).toLocaleString('pt-BR')}%`;if(type==='fixo')return money(value);return '—';}
@@ -813,16 +846,18 @@
       const reserved=new Map();vipRedemptions.filter(r=>['solicitado','aprovado'].includes(r.status)).forEach(row=>reserved.set(row.cliente_vip_id,(reserved.get(row.cliente_vip_id)||0)+Number(row.pontos_necessarios||0)));
       $('#vipClientRows').innerHTML=vipClients.map(c=>{
         const points=balances.get(c.id)||0,available=points-(reserved.get(c.id)||0);
-        return `<tr><td data-label="CLIENTE"><strong>${esc(c.nome)}</strong><small>${esc(c.observacoes||'')}</small></td><td data-label="WHATSAPP">${esc(c.whatsapp)}</td><td data-label="CÓDIGO"><strong>${esc(c.codigo)}</strong></td><td data-label="DESCONTO">${esc(vipDiscountLabel(c.desconto_tipo,c.desconto_valor))}</td><td data-label="PONTOS"><strong>${points}</strong><small>${available} disponíveis</small></td><td data-label="STATUS"><span class="admin-chip">${c.ativo?'ATIVO':'SUSPENSO'}</span></td><td data-label="AÇÕES"><div class="admin-actions"><a class="admin-btn small" href="https://wa.me/55${esc(c.whatsapp_normalizado)}?text=${encodeURIComponent(`Olá, ${c.nome}! Seu acesso VIP da Al Capone está liberado.
+        return `<tr><td data-label="CLIENTE / OBSERVAÇÃO"><strong>${esc(c.nome)}</strong><small>${esc(c.observacoes||'Sem observações')}</small></td><td data-label="WHATSAPP">${esc(c.whatsapp)}</td><td data-label="NÍVEL VIP"><span class="vip-level-chip level-${String(c.nivel_vip||'Bronze').toLowerCase()}">${esc(c.nivel_vip||'Bronze')}</span></td><td data-label="ANIVERSÁRIO">${c.data_aniversario?dateBR(c.data_aniversario):'—'}</td><td data-label="CÓDIGO"><strong>${esc(c.codigo)}</strong></td><td data-label="DESCONTO">${esc(vipDiscountLabel(c.desconto_tipo,c.desconto_valor))}</td><td data-label="PONTOS"><strong>${points}</strong><small>${available} disponíveis</small></td><td data-label="STATUS"><span class="admin-chip">${c.ativo?'ATIVO':'SUSPENSO'}</span></td><td data-label="AÇÕES"><div class="admin-actions"><a class="admin-btn small" href="https://wa.me/55${esc(c.whatsapp_normalizado)}?text=${encodeURIComponent(`Olá, ${c.nome}! Seu acesso VIP da Al Capone está liberado.
 
 Código: ${c.codigo}
 Use este código junto com o WhatsApp cadastrado ao acessar o agendamento: https://dellsoares.github.io/alcapone-agendamento/
 
 Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel="noopener noreferrer">ENVIAR CÓDIGO ↗</a><button class="admin-btn small" type="button" data-vip-edit="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-vip-toggle="${c.id}">${c.ativo?'SUSPENDER':'ATIVAR'}</button></div></td></tr>`;
-      }).join('')||'<tr><td colspan="7">Nenhum cliente VIP cadastrado.</td></tr>';
+      }).join('')||'<tr><td colspan="9">Nenhum cliente VIP cadastrado.</td></tr>';
+      renderWhatsappClientOptions();
       $$('[data-vip-edit]').forEach(btn=>btn.addEventListener('click',()=>{
         const c=vipClients.find(x=>x.id===btn.dataset.vipEdit);if(!c)return;editingVipClientId=c.id;
         $('#vipClientId').value=c.id;$('#vipClientName').value=c.nome;$('#vipClientPhone').value=c.whatsapp;$('#vipClientCode').value=c.codigo;
+        $('#vipClientLevel').value=c.nivel_vip||'Bronze';$('#vipClientBirthday').value=c.data_aniversario||'';
         $('#vipDiscountType').value=c.desconto_tipo;$('#vipDiscountValue').value=Number(c.desconto_valor||0);$('#vipClientNotes').value=c.observacoes||'';$('#vipClientActive').checked=c.ativo;
         $('#saveVipClient').textContent='SALVAR ALTERAÇÕES ↗';$('#cancelVipClientEdit').hidden=false;$('#vipClientForm').scrollIntoView({behavior:'smooth',block:'start'});message('vipClientMessage',`Editando cadastro de ${c.nome}.`);
       }));
@@ -849,6 +884,56 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
       $$('[data-vip-redeem-cancel]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Cancelar esta solicitação e liberar os pontos reservados?'))return;const {error}=await sb.from('alcapone_vip_resgates').update({status:'cancelado'}).eq('id',btn.dataset.vipRedeemCancel);if(error){message('vipRedemptionMessage',error.message,false);return;}message('vipRedemptionMessage','Solicitação cancelada; pontos liberados.');await loadVip();}));
       if(configResult.data)$('#vipPointsPerReal').value=Number(configResult.data.pontos_por_real);
     }
+    const whatsappTemplates={
+      promo:{detail:'OFERTA / DESCONTO',deadline:'VALIDADE DA PROMOÇÃO',detailPlaceholder:'Ex.: 20% de desconto em cortes',deadlinePlaceholder:'Ex.: até sexta-feira, 27/11',text:'Olá, {nome}! 💈\n\nTemos uma PROMOÇÃO RELÂMPAGO especial na Al Capone: {detalhe}.{prazo}\n\nSe quiser aproveitar, responda esta mensagem e nossa equipe orienta você.\n\nAl Capone Barbearia'},
+      date:{detail:'DATA OU OCASIÃO',deadline:'CONDIÇÃO / VALIDADE',detailPlaceholder:'Ex.: Dia dos Pais ou Dia do Cliente',deadlinePlaceholder:'Ex.: condição válida até 31/08',text:'Olá, {nome}! ✨\n\nPara celebrar {detalhe}, a Al Capone preparou uma condição especial para você.{prazo}\n\nSerá um prazer receber você!\n\nAl Capone Barbearia'},
+      birthday:{detail:'BENEFÍCIO DE ANIVERSÁRIO',deadline:'VALIDADE DO BENEFÍCIO',detailPlaceholder:'Ex.: 15% de desconto no mês do aniversário',deadlinePlaceholder:'Ex.: válido até 30/11',text:'Feliz aniversário, {nome}! 🎉\n\nA Al Capone deseja um novo ciclo cheio de conquistas. E temos um presente para comemorar com você: {detalhe}.{prazo}\n\nConte com a gente!\n\nAl Capone Barbearia'},
+      reminder:{detail:'O QUE DEVE SER LEMBRADO',deadline:'DATA / HORÁRIO',detailPlaceholder:'Ex.: sua próxima visita à Al Capone',deadlinePlaceholder:'Ex.: amanhã, às 14h',text:'Olá, {nome}! Tudo bem? 👋\n\nPassando para lembrar: {detalhe}.{prazo}\n\nSe precisar de alguma informação, estamos à disposição.\n\nAl Capone Barbearia'},
+      hours:{detail:'INFORMAÇÃO SOBRE O HORÁRIO',deadline:'DATA / HORÁRIO',detailPlaceholder:'Ex.: seu atendimento foi antecipado',deadlinePlaceholder:'Ex.: novo horário: 27/11 às 10h',text:'Olá, {nome}! Temos um aviso importante sobre seu atendimento na Al Capone: {detalhe}.{prazo}\n\nEm caso de dúvida, responda por aqui.\n\nAl Capone Barbearia'}
+    };
+    function renderWhatsappClientOptions(){
+      const select=$('#waClientSelect');if(!select)return;const previous=select.value;
+      select.innerHTML='<option value="">Selecione um cliente VIP</option>'+vipClients.map(c=>`<option value="${esc(c.id)}">${esc(c.nome)} · ${esc(c.whatsapp)} · ${esc(c.nivel_vip||'Bronze')}</option>`).join('');
+      if(vipClients.some(c=>c.id===previous))select.value=previous;
+      updateWhatsappPreview();
+    }
+    function selectedWhatsappClient(){return vipClients.find(c=>c.id===$('#waClientSelect')?.value)||null;}
+    function currentWhatsappText(){
+      const client=selectedWhatsappClient();if(!client)return '';
+      const detail=$('#waMessageDetail').value.trim(),deadline=$('#waMessageDeadline').value.trim();
+      return $('#waMessageTemplate').value.replaceAll('{nome}',client.nome).replaceAll('{detalhe}',detail).replaceAll('{prazo}',deadline?`\n\n${deadline}`:'').replace(/\{(?:nome|detalhe|prazo)\}/g,'').replace(/\n{3,}/g,'\n\n').trim();
+    }
+    function updateWhatsappPreview(){
+      const type=$('#waMessageType').value,config=whatsappTemplates[type];
+      $('#waDetailLabel').textContent=config.detail;$('#waDeadlineLabel').textContent=config.deadline;$('#waMessageDetail').placeholder=config.detailPlaceholder;$('#waMessageDeadline').placeholder=config.deadlinePlaceholder;
+      const text=currentWhatsappText();$('#waMessagePreview').textContent=text||'Selecione um cliente e preencha o dado principal para visualizar a mensagem.';
+    }
+    function loadWhatsappTemplate(){
+      const type=$('#waMessageType').value,config=whatsappTemplates[type];let saved='';
+      try{saved=localStorage.getItem(`alcapone_whatsapp_template_${type}`)||'';}catch{}
+      $('#waMessageTemplate').value=saved||config.text;$('#waMessageDetail').value='';$('#waMessageDeadline').value='';
+      $('#waMessageTemplate').dataset.type=type;updateWhatsappPreview();
+    }
+    $('#waMessageType').addEventListener('change',loadWhatsappTemplate);
+    ['waClientSelect','waMessageDetail','waMessageDeadline','waMessageTemplate'].forEach(id=>$('#'+id).addEventListener('input',updateWhatsappPreview));
+    $('#waClientSelect').addEventListener('change',updateWhatsappPreview);
+    $('#saveWaTemplate').addEventListener('click',()=>{
+      const type=$('#waMessageType').value,text=$('#waMessageTemplate').value.trim();if(!text){message('waMessageStatus','Digite um modelo antes de salvar.',false);return;}
+      try{localStorage.setItem(`alcapone_whatsapp_template_${type}`,text);message('waMessageStatus','Modelo salvo neste navegador.');}catch{message('waMessageStatus','Não foi possível salvar o modelo neste navegador.',false);}
+    });
+    $('#resetWaTemplate').addEventListener('click',()=>{
+      const type=$('#waMessageType').value;try{localStorage.removeItem(`alcapone_whatsapp_template_${type}`);}catch{}
+      $('#waMessageTemplate').value=whatsappTemplates[type].text;$('#waMessageDetail').value='';$('#waMessageDeadline').value='';updateWhatsappPreview();message('waMessageStatus','Modelo padrão restaurado.');
+    });
+    $('#openWaMessage').addEventListener('click',()=>{
+      const client=selectedWhatsappClient();if(!client){message('waMessageStatus','Selecione um cliente.',false);return;}
+      const detail=$('#waMessageDetail').value.trim();if(!detail){message('waMessageStatus','Preencha o dado principal da mensagem.',false);$('#waMessageDetail').focus();return;}
+      const text=currentWhatsappText(),digits=normalizePhone(client.whatsapp_normalizado||client.whatsapp);
+      if(digits.length<10||digits.length>11){message('waMessageStatus','O WhatsApp cadastrado deste cliente está inválido.',false);return;}
+      const url=`https://wa.me/55${digits}?text=${encodeURIComponent(text)}`;
+      window.open(url,'_blank','noopener,noreferrer');message('waMessageStatus',`Conversa de ${client.nome} aberta com a mensagem preenchida. Confira e toque em Enviar no WhatsApp.`);
+    });
+    loadWhatsappTemplate();
     $('#generateVipCode').addEventListener('click',()=>$('#vipClientCode').value=vipCode());
     $('#vipClientCode').addEventListener('input',()=>$('#vipClientCode').value=$('#vipClientCode').value.toUpperCase().replace(/[^A-Z0-9_-]/g,''));
     $('#vipDiscountType').addEventListener('change',()=>{$('#vipDiscountValue').max=$('#vipDiscountType').value==='percentual'?'100':'';if($('#vipDiscountType').value==='nenhum')$('#vipDiscountValue').value='0';});
@@ -856,7 +941,7 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
     $('#vipClientForm').addEventListener('submit',async e=>{
       e.preventDefault();message('vipClientMessage','Salvando cliente VIP...');
       const phone=$('#vipClientPhone').value.trim(),digits=normalizePhone(phone),type=$('#vipDiscountType').value,value=Number($('#vipDiscountValue').value||0);
-      const payload={nome:$('#vipClientName').value.trim(),whatsapp:phone,whatsapp_normalizado:digits,codigo:$('#vipClientCode').value.trim().toUpperCase(),desconto_tipo:type,desconto_valor:type==='nenhum'?0:value,ativo:$('#vipClientActive').checked,observacoes:$('#vipClientNotes').value.trim()||null};
+      const payload={nome:$('#vipClientName').value.trim(),whatsapp:phone,whatsapp_normalizado:digits,codigo:$('#vipClientCode').value.trim().toUpperCase(),nivel_vip:$('#vipClientLevel').value,data_aniversario:$('#vipClientBirthday').value||null,desconto_tipo:type,desconto_valor:type==='nenhum'?0:value,ativo:$('#vipClientActive').checked,observacoes:$('#vipClientNotes').value.trim()||null};
       if(digits.length<10||digits.length>11){message('vipClientMessage','Informe um WhatsApp com DDD válido.',false);return;}
       if(!/^[A-Z0-9_-]{6,30}$/.test(payload.codigo)){message('vipClientMessage','O código deve ter de 6 a 30 caracteres (letras, números, hífen ou sublinhado).',false);return;}
       if(type==='percentual'&&(value<=0||value>100)||type==='fixo'&&value<=0){message('vipClientMessage','Informe um desconto válido.',false);return;}
@@ -909,6 +994,7 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
     $('#blockDate').min=today();$('#manualDate').min=today();
     resetCouponForm();
     resetVipClientForm();
+    $('#vipClientLevel').value='Bronze';
     $('#vipHourDate').min=today();$('#vipHourDate').max=datePlusDays(today(),60);$('#vipHourDate').value=today();
     $('#vipOfferStart').value=today();$('#vipOfferEnd').value=today();
     const {data:{session}}=await sb.auth.getSession();

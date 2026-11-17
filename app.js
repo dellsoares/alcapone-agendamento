@@ -134,11 +134,12 @@
     return Math.min(service.price_cents/100,best);
   }
   function renderVipDashboard(){
-    const el=$('#vipDashboard');if(!booking.vip){el.hidden=true;el.innerHTML='';return;}
+    const el=$('#vipDashboard');if(!booking.vip){el.hidden=true;el.innerHTML='';$('#vipToggle').classList.remove('is-active');$('#vipToggleTitle').textContent='CLIENTE VIP? ACESSE AQUI';$('#vipToggleText').textContent='HORÁRIOS EXCLUSIVOS · BENEFÍCIOS · PONTOS';return;}
     const v=booking.vip,discountType=v.discount_type==='percentual'?`${Number(v.discount_value).toLocaleString('pt-BR')}%`:v.discount_type==='fixo'?brl(Math.round(Number(v.discount_value)*100)):'Benefícios ativos';
     const offers=(v.offers||[]).map(o=>`<div class="vip-offer"><strong>${esc(o.title)} · ${o.type==='combo'?'COMBO':'PROMOÇÃO'}</strong><p>${esc(o.description)}</p>${o.type==='promocao'&&o.discount_type!=='nenhum'?`<small>Benefício: ${o.discount_type==='percentual'?`${Number(o.discount_value).toLocaleString('pt-BR')}%`:brl(Math.round(Number(o.discount_value)*100))}</small>`:''}</div>`).join('');
     const rewards=(v.rewards||[]).map(r=>`<div class="vip-reward"><div><strong>${esc(r.name)} · ${Number(r.points)} PONTOS</strong><p>${esc(r.description||'')}</p></div><button type="button" data-vip-reward="${esc(r.id)}" ${r.can_redeem?'':'disabled'}>${r.can_redeem?'SOLICITAR':'PONTOS INSUFICIENTES'}</button></div>`).join('');
-    el.innerHTML=`<div class="vip-dashboard-head"><strong>OLÁ, ${esc(v.client_name)}.</strong><span>ACESSO VIP ATIVO</span><button type="button" class="vip-logout" data-vip-logout>SAIR DA ÁREA VIP</button></div><div class="vip-metrics"><div class="vip-metric"><strong>${Number(v.points_available||0)}</strong><small>PONTOS DISPONÍVEIS</small></div><div class="vip-metric"><strong>${esc(discountType)}</strong><small>DESCONTO VIP</small></div><div class="vip-metric"><strong>${(v.offers||[]).length}</strong><small>OFERTAS ATIVAS</small></div></div><p>Seu código VIP libera horários especiais e benefícios durante o agendamento. Os pontos são creditados após o atendimento ser concluído.</p>${offers?`<strong class="micro">PROMOÇÕES E COMBOS</strong><div class="vip-offer-list">${offers}</div>`:''}${rewards?`<strong class="micro" style="display:block;margin-top:14px">TROQUE SEUS PONTOS</strong><div class="vip-reward-list">${rewards}</div>`:''}`;
+    el.innerHTML=`<div class="vip-dashboard-head"><strong>OLÁ, ${esc(v.client_name)}.</strong><span>ACESSO VIP ATIVO${v.vip_level?` · ${esc(v.vip_level).toUpperCase()}`:''}</span><button type="button" class="vip-logout" data-vip-logout>SAIR DA ÁREA VIP</button></div><div class="vip-metrics"><div class="vip-metric"><strong>${Number(v.points_available||0)}</strong><small>PONTOS DISPONÍVEIS</small></div><div class="vip-metric"><strong>${esc(discountType)}</strong><small>DESCONTO VIP</small></div><div class="vip-metric"><strong>${(v.offers||[]).length}</strong><small>OFERTAS ATIVAS</small></div></div><p>Seu nível atual: <strong>${esc(v.vip_level||'VIP')}</strong>. Seu código libera horários especiais e benefícios durante o agendamento. Os pontos são creditados após o atendimento ser concluído.</p>${offers?`<strong class="micro">PROMOÇÕES E COMBOS</strong><div class="vip-offer-list">${offers}</div>`:''}${rewards?`<strong class="micro" style="display:block;margin-top:14px">TROQUE SEUS PONTOS</strong><div class="vip-reward-list">${rewards}</div>`:''}`;
+    $('#vipToggle').classList.add('is-active');$('#vipToggleTitle').textContent='ÁREA VIP ATIVA · VER BENEFÍCIOS';$('#vipToggleText').textContent=`${v.vip_level||'CLIENTE VIP'} · ${Number(v.points_available||0)} PONTOS DISPONÍVEIS`;
     el.hidden=false;
     $('[data-vip-logout]',el).addEventListener('click',()=>clearVip('Acesso VIP encerrado.'));
     $$('[data-vip-reward]',el).forEach(btn=>btn.addEventListener('click',async()=>{
@@ -167,12 +168,17 @@
   }
   function clearVip(message=''){
     if(!booking.vip)return;booking.vip=null;renderVipDashboard();setVipMessage(message,'');
+    $('#vipToggle').classList.remove('is-active');$('#vipToggleTitle').textContent='CLIENTE VIP? ACESSE AQUI';$('#vipToggleText').textContent='HORÁRIOS EXCLUSIVOS · BENEFÍCIOS · PONTOS';
     if(step===3){booking.time=null;if(booking.date&&[0,1].includes(new Date(booking.date+'T12:00:00Z').getUTCDay()))booking.date=null;renderDates();if(booking.date)loadAvailability();else $('#slotArea').innerHTML='<p class="empty-note">Selecione uma data para consultar os horários.</p>';updateNext();}
     if(step===4){booking.time=null;if(booking.date&&[0,1].includes(new Date(booking.date+'T12:00:00Z').getUTCDay()))booking.date=null;go(3);}
   }
   $('#vipToggle').addEventListener('click',()=>{
-    const panel=$('#vipAccessPanel'),open=panel.hidden;panel.hidden=!open;$('#vipToggle').setAttribute('aria-expanded',String(open));$('#vipToggle b').textContent=open?'−':'+';
+    const dialog=$('#vipDialog');
+    if(!dialog.open)dialog.showModal();
+    if(!booking.vip)setTimeout(()=>$('#vipPhone').focus(),80);
   });
+  $('#closeVipDialog').addEventListener('click',()=>$('#vipDialog').close());
+  $('#vipDialog').addEventListener('click',event=>{if(event.target===$('#vipDialog'))$('#vipDialog').close();});
   $('#vipCode').addEventListener('input',()=>{const v=$('#vipCode').value.toUpperCase().replace(/[^A-Z0-9_-]/g,'');$('#vipCode').value=v;if(booking.vip&&v!==booking.vip.code)clearVip('Código alterado. Valide novamente.');});
   $('#vipPhone').addEventListener('input',()=>{if(booking.vip&&normalizePhone($('#vipPhone').value)!==booking.vip.phone)clearVip('WhatsApp alterado. Valide novamente.');});
   $('#validateVip').addEventListener('click',()=>validateVip());

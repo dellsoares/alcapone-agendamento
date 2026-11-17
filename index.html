@@ -6,7 +6,7 @@
   <title>Agendamento | Al Capone Barbearia</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=vip-relacionamento-1">
 </head>
 <body>
   <header class="topbar">
@@ -30,15 +30,25 @@
         <div class="booking-shell" id="formulario">
           <div class="shell-header"><div><span class="micro">AL CAPONE / RESERVAS</span><h2>AGENDE SEU<br><em>PRÓXIMO HORÁRIO.</em></h2></div><div class="shell-mark">AC</div></div>
           <div class="demo-banner" id="demoBanner" hidden><strong>SEM CONEXÃO</strong><span>Não foi possível conectar ao banco de agendamentos.</span></div>
-          <section class="vip-access" aria-label="Acesso de cliente VIP">
-            <button id="vipToggle" class="vip-toggle" type="button" aria-expanded="false" aria-controls="vipAccessPanel"><span><strong>CLIENTE VIP?</strong><small>ACESSE SEUS BENEFÍCIOS E HORÁRIOS EXCLUSIVOS</small></span><b>+</b></button>
-            <div id="vipAccessPanel" class="vip-access-panel" hidden>
-              <p>Informe o código individual e o WhatsApp cadastrado para liberar seus benefícios.</p>
-              <div class="vip-entry-grid"><div><label for="vipPhone">WHATSAPP CADASTRADO</label><input id="vipPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" placeholder="(31) 99999-9999"></div><div><label for="vipCode">CÓDIGO VIP</label><input id="vipCode" type="text" maxlength="30" autocapitalize="characters" placeholder="VIP-XXXXXXXX"></div><button id="validateVip" type="button">ACESSAR VIP ↗</button></div>
-              <p id="vipMessage" class="vip-message" role="status" aria-live="polite"></p>
-              <div id="vipDashboard" class="vip-dashboard" hidden></div>
+          <button id="vipToggle" class="vip-hero-cta" type="button" aria-haspopup="dialog" aria-controls="vipDialog">
+            <span class="vip-hero-crown" aria-hidden="true">♛</span>
+            <span class="vip-hero-copy"><strong id="vipToggleTitle">CLIENTE VIP? ACESSE AQUI</strong><small id="vipToggleText">HORÁRIOS EXCLUSIVOS · BENEFÍCIOS · PONTOS</small></span>
+            <span class="vip-hero-arrow" aria-hidden="true">↗</span>
+          </button>
+          <dialog id="vipDialog" class="vip-dialog" aria-labelledby="vipDialogTitle">
+            <div class="vip-dialog-inner">
+              <div class="vip-dialog-heading">
+                <div><span class="micro">AL CAPONE EXCLUSIVE</span><h2 id="vipDialogTitle">ÁREA <em>VIP.</em></h2></div>
+                <button id="closeVipDialog" class="vip-dialog-close" type="button" aria-label="Fechar acesso VIP">×</button>
+              </div>
+              <div id="vipAccessPanel" class="vip-access-panel">
+                <p>Informe o código individual e o WhatsApp cadastrado para liberar seus benefícios, horários exclusivos e pontuação.</p>
+                <div class="vip-entry-grid"><div><label for="vipPhone">WHATSAPP CADASTRADO</label><input id="vipPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" placeholder="(31) 99999-9999"></div><div><label for="vipCode">CÓDIGO VIP</label><input id="vipCode" type="text" maxlength="30" autocapitalize="characters" placeholder="VIP-XXXXXXXX"></div><button id="validateVip" type="button">ACESSAR VIP ↗</button></div>
+                <p id="vipMessage" class="vip-message" role="status" aria-live="polite"></p>
+                <div id="vipDashboard" class="vip-dashboard" hidden></div>
+              </div>
             </div>
-          </section>
+          </dialog>
           <ol class="steps" id="steps" aria-label="Etapas da reserva">
             <li class="active" data-step="1"><span>01</span><small>SERVIÇO</small></li>
             <li data-step="2"><span>02</span><small>PROFISSIONAL</small></li>
@@ -100,6 +110,6 @@
     <section class="how-section" id="como-funciona"><div class="wrap"><div><p class="micro">SIMPLES E DIRETO</p><h2>UM HORÁRIO FEITO <em>PARA VOCÊ.</em></h2><p>O sistema respeita o expediente de cada profissional e libera apenas horários compatíveis com a duração do serviço. Reservas confirmadas desaparecem da disponibilidade.</p></div><div class="how-list"><div><span>01</span><strong>ESCOLHA</strong><small>O serviço e o barbeiro</small></div><div><span>02</span><strong>RESERVE</strong><small>O dia e horário</small></div><div><span>03</span><strong>COMPAREÇA</strong><small>Com a reserva confirmada</small></div></div></div></section>
   </main>
   <footer class="site-footer"><div class="wrap"><div class="footer-main"><div><img src="assets/logo.png" alt="Logo Al Capone" width="54" height="54"><strong>AL CAPONE BARBEARIA</strong></div><p>Rua Padre Eustáquio, 2160 · Belo Horizonte/MG<br>Terça a sábado · Consulte os horários disponíveis</p><a href="https://wa.me/5531982865590" target="_blank" rel="noopener noreferrer">DÚVIDAS? FALE NO WHATSAPP ↗</a></div><div class="footer-small"><span>Agendamento Al Capone Barbearia · © <span id="currentYear">2026</span></span><span>Criado por <a href="https://wendellsoares.jor.br" target="_blank" rel="noopener noreferrer">Wendell Soares ↗</a></span></div></div></footer>
-  <script src="app.js" defer></script>
+  <script src="app.js?v=vip-relacionamento-1" defer></script>
 </body>
 </html>

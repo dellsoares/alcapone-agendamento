@@ -56,3 +56,10 @@ ATUALIZAÇÃO — CLIENTES VIP E FIDELIDADE:
 - Os pontos de uma recompensa ficam reservados quando o cliente solicita o resgate e só são debitados quando a equipe marca como ENTREGUE.
 - Cupons e benefícios VIP não são acumulados; o sistema aplica um benefício por reserva.
 - Para agendamentos manuais de clientes VIP, informe o código VIP no formulário do painel para registrar o vínculo e liberar horários exclusivos.
+
+ATUALIZAÇÃO — RELACIONAMENTO VIP
+1. No Supabase SQL Editor, execute 05_CLIENTES_VIP_RELACIONAMENTO.sql depois do 04_CLIENTE_VIP.sql.
+2. Publique os arquivos atualizados mantendo index.html, admin.html, app.js e style.css na raiz do repositório.
+3. A capa passa a exibir o acesso VIP em destaque; o formulário abre em janela modal.
+4. O painel permite registrar nível (Bronze, Prata, Ouro, Platina ou Black), aniversário e observações.
+5. A Central de Mensagens monta modelos editáveis para promoção relâmpago, data comemorativa, aniversário, lembrete e aviso de horário. O botão abre a conversa do WhatsApp com o texto preenchido; o envio é manual.
