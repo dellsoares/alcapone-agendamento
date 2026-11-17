@@ -58,7 +58,7 @@
     .admin-stat{background:#1a130f;border:1px solid #4a3526;padding:15px}
     .admin-stat strong{display:block;font:34px var(--display);color:var(--accent2)}
     .admin-stat span{font-size:9px;letter-spacing:1px;color:#b9a695}
-    .admin-service-row{display:grid;grid-template-columns:minmax(150px,2fr) 95px 115px 90px auto;gap:10px;align-items:end;padding:13px 0;border-bottom:1px solid #4b3628}
+    .admin-service-row{display:grid;grid-template-columns:minmax(150px,2fr) 95px 115px 90px auto auto;gap:10px;align-items:end;padding:13px 0;border-bottom:1px solid #4b3628}
     .admin-service-row label{margin-top:0}
     .admin-check{display:flex!important;align-items:center;gap:8px}
     .admin-check input{width:18px!important;min-height:18px!important;accent-color:var(--accent)}
@@ -143,7 +143,7 @@
       .admin-table td small{font-size:9px;line-height:1.45;overflow-wrap:anywhere}
       .admin-table .admin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
       .admin-table .admin-actions .admin-btn{width:100%;min-height:38px;padding:8px 5px;font-size:8px}
-      .admin-service-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .admin-service-row{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.admin-permissions{grid-template-columns:1fr}
       .admin-service-row>div:first-child{grid-column:1/-1}
       .admin-service-row>button{width:100%;min-height:42px}
       .admin-hours-row{
@@ -183,6 +183,12 @@
     .vip-level-chip.level-ouro{border-color:#c29a4d;color:#f0cf85}
     .vip-level-chip.level-platina{border-color:#a7aeb7;color:#e4e8ee}
     .vip-level-chip.level-black{border-color:#6e6257;color:#f0e6dc;background:#110d0a}
+    .admin-permissions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:12px 0}
+    .admin-permission{display:flex!important;align-items:flex-start;gap:9px;padding:10px;background:#1a130f;border:1px solid #4b3628;margin:0!important;font-size:10px!important;line-height:1.45}
+    .admin-permission input{width:17px!important;min-width:17px;min-height:17px!important;margin:0;accent-color:var(--accent)}
+    .admin-user-state{display:inline-block;padding:4px 7px;border:1px solid #70583f;color:#d9b38b;font-size:9px}
+    .admin-user-state.off{border-color:#8b4c3c;color:#f0b6a3}
+    .admin-danger-note{color:#f0b6a3!important;border-left:2px solid #a65b48;padding-left:10px}
   </style>
 </head>
 <body>
@@ -213,7 +219,7 @@
           <div><p class="micro">GESTÃO DA BARBEARIA</p><h1>CONTROLE DA <em>AGENDA.</em></h1><p>Reservas, horários e serviços em um só lugar.</p></div>
           <div class="admin-actions">
             <button id="refreshAll" class="admin-btn" type="button">ATUALIZAR DADOS ↻</button>
-            <button id="resetTestData" class="admin-btn danger" type="button">LIMPAR DADOS DE TESTE</button>
+            <button id="resetTestData" class="admin-btn danger" type="button" data-master-only>LIMPAR DADOS DE TESTE</button>
           </div>
         </div>
         <div class="admin-stat-row">
@@ -223,13 +229,16 @@
         </div>
 
         <nav class="admin-tabs" aria-label="Seções do painel">
-          <button type="button" class="active" data-tab="agenda">AGENDA</button>
-          <button type="button" data-tab="manual">NOVO AGENDAMENTO</button>
-          <button type="button" data-tab="bloqueios">BLOQUEIOS</button>
-          <button type="button" data-tab="horarios">EXPEDIENTE</button>
-          <button type="button" data-tab="servicos">SERVIÇOS</button>
-          <button type="button" data-tab="cupons">CUPONS</button>
-          <button type="button" data-tab="vip">CLIENTES VIP</button>
+          <button type="button" class="active" data-tab="agenda" data-permission="agenda">AGENDA</button>
+          <button type="button" data-tab="manual" data-permission="agendamento_manual">NOVO AGENDAMENTO</button>
+          <button type="button" data-tab="bloqueios" data-permission="bloqueios">BLOQUEIOS</button>
+          <button type="button" data-tab="horarios" data-permission="expediente">EXPEDIENTE</button>
+          <button type="button" data-tab="servicos" data-permission="servicos">SERVIÇOS</button>
+          <button type="button" data-tab="equipe" data-permission="profissionais">EQUIPE</button>
+          <button type="button" data-tab="cupons" data-permission="cupons">CUPONS</button>
+          <button type="button" data-tab="vip" data-permission="vip">CLIENTES VIP</button>
+          <button type="button" data-tab="clientes" data-permission="clientes">CLIENTES</button>
+          <button type="button" data-tab="usuarios" data-master-only>USUÁRIOS</button>
         </nav>
 
         <section class="admin-section active" data-section="agenda">
@@ -311,7 +320,17 @@
         <section class="admin-section" data-section="servicos">
           <div class="admin-card">
             <h2>SERVIÇOS E PREÇOS</h2>
-            <p>Edite nome, duração, preço e disponibilidade dos serviços exibidos na página de agendamento.</p>
+            <p>Cadastre, edite, desative ou exclua serviços. Serviços com reservas vinculadas não podem ser apagados para preservar o histórico.</p>
+            <form id="serviceForm">
+              <input type="hidden" id="serviceEditId">
+              <div class="admin-fields">
+                <div><label for="serviceNewName">NOME DO SERVIÇO</label><input id="serviceNewName" maxlength="120" required placeholder="Ex.: Corte tradicional"></div>
+                <div><label for="serviceNewDuration">DURAÇÃO (MIN)</label><input id="serviceNewDuration" type="number" min="10" max="300" step="5" value="30" required></div>
+                <div><label for="serviceNewPrice">PREÇO (R$)</label><input id="serviceNewPrice" type="number" min="0" step="0.01" required placeholder="Ex.: 45,00"></div>
+              </div>
+              <label class="admin-check"><input id="serviceNewActive" type="checkbox" checked> SERVIÇO ATIVO</label>
+              <div class="admin-actions" style="margin-top:12px"><button id="saveNewService" class="admin-btn primary" type="submit">CADASTRAR SERVIÇO ↗</button><button id="cancelServiceEdit" class="admin-btn" type="button" hidden>CANCELAR EDIÇÃO</button></div>
+            </form>
             <div id="servicesEditor"></div>
             <p id="servicesMessage" class="admin-note"></p>
           </div>
@@ -450,6 +469,70 @@
             <p id="vipRedemptionMessage" class="admin-note"></p>
           </div>
         </section>
+        <section class="admin-section" data-section="equipe">
+          <div class="admin-card">
+            <h2>PROFISSIONAIS</h2>
+            <p>Cadastre e edite os profissionais que aparecem na agenda. Um profissional com reservas ou horários vinculados não pode ser excluído; nesse caso, desative o cadastro para manter o histórico.</p>
+            <form id="professionalForm">
+              <input type="hidden" id="professionalEditId">
+              <div class="admin-fields">
+                <div><label for="professionalName">NOME DO PROFISSIONAL</label><input id="professionalName" maxlength="100" required placeholder="Nome completo"></div>
+              </div>
+              <label class="admin-check"><input id="professionalActive" type="checkbox" checked> PROFISSIONAL ATIVO</label>
+              <div class="admin-actions" style="margin-top:12px"><button id="saveProfessional" class="admin-btn primary" type="submit">CADASTRAR PROFISSIONAL ↗</button><button id="cancelProfessionalEdit" class="admin-btn" type="button" hidden>CANCELAR EDIÇÃO</button></div>
+            </form>
+            <p id="professionalMessage" class="admin-note" role="status"></p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>NOME</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="professionalRows"><tr><td colspan="3">Carregando profissionais...</td></tr></tbody></table></div>
+          </div>
+        </section>
+
+        <section class="admin-section" data-section="clientes">
+          <div class="admin-card">
+            <h2>CADASTRO DE CLIENTES</h2>
+            <p>Lista consolidada dos clientes que já realizaram ou possuem reservas e dos clientes VIP cadastrados.</p>
+            <div class="admin-tools"><div><label for="customerSearch">BUSCAR CLIENTE</label><input id="customerSearch" type="search" placeholder="Nome ou WhatsApp"></div><button id="reloadCustomers" class="admin-btn" type="button">ATUALIZAR ↻</button></div>
+            <p class="admin-danger-note admin-help">A exclusão remove o cadastro VIP, pontos e dados pessoais. Reservas anteriores permanecem no histórico, mas nome, telefone, e-mail e observações são anonimizados.</p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>CLIENTE</th><th>WHATSAPP</th><th>RESERVAS</th><th>ÚLTIMA VISITA</th><th>VIP</th><th>AÇÕES</th></tr></thead><tbody id="customerRows"><tr><td colspan="6">Carregando clientes...</td></tr></tbody></table></div>
+            <p id="customerMessage" class="admin-note" role="status"></p>
+          </div>
+        </section>
+
+        <section class="admin-section" data-section="usuarios">
+          <div class="admin-card">
+            <h2>GESTÃO DE COLABORADORES</h2>
+            <p>Crie acessos individuais, escolha o perfil e marque exatamente quais áreas cada pessoa poderá utilizar. Os dois acessos atuais da Al Capone permanecem como MASTER.</p>
+            <form id="collaboratorForm">
+              <input type="hidden" id="collaboratorId">
+              <div class="admin-fields">
+                <div><label for="collaboratorName">NOME</label><input id="collaboratorName" maxlength="100" required placeholder="Nome do colaborador"></div>
+                <div><label for="collaboratorEmail">E-MAIL DE ACESSO</label><input id="collaboratorEmail" type="email" required placeholder="colaborador@email.com"></div>
+                <div><label for="collaboratorPassword">SENHA INICIAL</label><input id="collaboratorPassword" type="password" minlength="8" autocomplete="new-password" placeholder="Mínimo de 8 caracteres"></div>
+                <div><label for="collaboratorRole">PERFIL</label><select id="collaboratorRole"><option value="RECEPCAO">RECEPÇÃO</option><option value="GERENTE">GERENTE</option><option value="BARBEIRO">BARBEIRO</option><option value="PERSONALIZADO">PERSONALIZADO</option><option value="MASTER">MASTER</option></select></div>
+                <div id="collaboratorProfessionalWrap"><label for="collaboratorProfessional">PROFISSIONAL VINCULADO (BARBEIRO)</label><select id="collaboratorProfessional"><option value="">Selecione um profissional</option></select></div>
+              </div>
+              <label>PERMISSÕES DO COLABORADOR</label>
+              <div class="admin-permissions" id="collaboratorPermissions">
+                <label class="admin-permission"><input type="checkbox" data-perm="agenda"> <span>Agenda: consultar e atualizar reservas</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="agendamento_manual"> <span>Agendamento manual: criar reservas pelo painel</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="bloqueios"> <span>Bloqueios: bloquear e remover horários</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="expediente"> <span>Expediente: alterar horários de trabalho</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="servicos"> <span>Serviços: editar preços, duração e cadastro</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="profissionais"> <span>Equipe: cadastrar e editar profissionais</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="cupons"> <span>Cupons: administrar campanhas</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="vip"> <span>VIP: clientes, pontos, ofertas e resgates</span></label>
+                <label class="admin-permission"><input type="checkbox" data-perm="clientes"> <span>Clientes: consultar e excluir cadastros</span></label>
+              </div>
+              <p class="admin-help">O perfil BARBEIRO fica vinculado a um profissional e só visualiza reservas, bloqueios e expediente desse profissional. MASTER tem acesso total e pode administrar outros usuários.</p>
+              <div class="admin-actions"><button id="saveCollaborator" class="admin-btn primary" type="submit">CRIAR ACESSO ↗</button><button id="cancelCollaboratorEdit" class="admin-btn" type="button" hidden>CANCELAR EDIÇÃO</button></div>
+            </form>
+            <p id="collaboratorMessage" class="admin-note" role="status"></p>
+          </div>
+          <div class="admin-card">
+            <h2>ACESSOS CADASTRADOS</h2>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>COLABORADOR</th><th>PERFIL</th><th>PROFISSIONAL</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="collaboratorRows"><tr><td colspan="5">Carregando colaboradores...</td></tr></tbody></table></div>
+          </div>
+        </section>
+
         <p id="globalMessage" class="admin-note" role="status"></p>
       </section>
     </div>
@@ -503,12 +586,33 @@
     const nextDate = d => {const x=new Date(d+'T12:00:00-03:00');x.setDate(x.getDate()+1);return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(x)};
     const datePlusDays = (d,n) => {const x=new Date(d+'T12:00:00-03:00');x.setDate(x.getDate()+n);return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(x)};
     const weekdays = ['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'];
-    let professionals=[], services=[], bookings=[], schedules=[], couponCampaigns=[], vipClients=[], vipHours=[], vipOffers=[], vipRewards=[], vipRedemptions=[], currentUser=null, rescheduleBooking=null, editingVipClientId=null;
+    let professionals=[], services=[], bookings=[], schedules=[], couponCampaigns=[], vipClients=[], vipHours=[], vipOffers=[], vipRewards=[], vipRedemptions=[], customers=[], collaboratorRows=[], currentUser=null, currentAdmin=null, rescheduleBooking=null, editingVipClientId=null;
 
+    const permissionKeys=['agenda','agendamento_manual','bloqueios','expediente','servicos','profissionais','cupons','vip','clientes'];
+    const roleLabels={MASTER:'MASTER',GERENTE:'GERENTE',RECEPCAO:'RECEPÇÃO',BARBEIRO:'BARBEIRO',PERSONALIZADO:'PERSONALIZADO'};
+    const rolePresets={
+      GERENTE:{agenda:true,agendamento_manual:true,bloqueios:true,expediente:true,servicos:true,profissionais:true,cupons:true,vip:true,clientes:true},
+      RECEPCAO:{agenda:true,agendamento_manual:true,bloqueios:true,clientes:true},
+      BARBEIRO:{agenda:true},
+      PERSONALIZADO:{},
+      MASTER:Object.fromEntries(permissionKeys.map(k=>[k,true]))
+    };
+    function can(key){return Boolean(currentAdmin&&(currentAdmin.perfil==='MASTER'||currentAdmin.permissoes?.[key]===true));}
+    function isMaster(){return currentAdmin?.perfil==='MASTER'&&currentAdmin?.ativo===true;}
     function message(id, text, ok=true){const el=$('#'+id);if(!el)return;el.textContent=text||'';el.classList.toggle('error',!ok);}
     function fillSelect(id, items, label){const el=$('#'+id);if(!el)return;const old=el.value;el.innerHTML=(label?`<option value="">${esc(label)}</option>`:'')+items.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');if(items.some(x=>String(x.id)===old))el.value=old;}
     function tab(name){$$('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===name));$$('[data-section]').forEach(s=>s.classList.toggle('active',s.dataset.section===name));}
-    $$('[data-tab]').forEach(b=>b.addEventListener('click',()=>tab(b.dataset.tab)));
+    function applyPermissions(){
+      $$('[data-permission]').forEach(el=>{el.hidden=!can(el.dataset.permission);});
+      $$('[data-master-only]').forEach(el=>{el.hidden=!isMaster();});
+      const active=$('[data-tab].active');
+      if(active?.hidden){const first=$$('[data-tab]').find(b=>!b.hidden);if(first)tab(first.dataset.tab);}
+    }
+    async function confirmDelete(label, detail='Esta ação não poderá ser desfeita.'){
+      if(!confirm(`ATENÇÃO: você está prestes a excluir ${label}.\n\n${detail}\n\nDeseja continuar?`))return false;
+      return prompt(`Para confirmar a exclusão de ${label}, digite EXCLUIR:`)==='EXCLUIR';
+    }
+    $$('[data-tab]').forEach(b=>b.addEventListener('click',()=>{if(!b.hidden)tab(b.dataset.tab);}));
 
     async function rpc(name,args){
       const {data,error}=await sb.rpc(name,args);
@@ -518,15 +622,16 @@
     async function checkAdmin(){
       const {data:{user},error:userError}=await sb.auth.getUser();
       if(userError||!user)return false;
-      const {data,error}=await sb.from('administradores').select('usuario_id').eq('usuario_id',user.id).maybeSingle();
+      const {data,error}=await sb.from('administradores').select('usuario_id,nome,email,perfil,permissoes,ativo,profissional_id').eq('usuario_id',user.id).eq('ativo',true).maybeSingle();
       if(error)throw error;
       if(!data)return false;
-      currentUser=user;return true;
+      currentUser=user;currentAdmin=data;return true;
     }
     async function showPanel(){
       const ok=await checkAdmin();
-      if(!ok){await sb.auth.signOut();$('#panelArea').hidden=true;$('#loginArea').hidden=false;$('#logoutBtn').hidden=true;throw new Error('Este e-mail não está autorizado como administrador.');}
-      $('#loginArea').hidden=true;$('#panelArea').hidden=false;$('#logoutBtn').hidden=false;$('#loggedEmail').textContent=currentUser.email||'Administrador';
+      if(!ok){await sb.auth.signOut();currentAdmin=null;$('#panelArea').hidden=true;$('#loginArea').hidden=false;$('#logoutBtn').hidden=true;throw new Error('Este e-mail não está autorizado ou seu acesso foi suspenso.');}
+      $('#loginArea').hidden=true;$('#panelArea').hidden=false;$('#logoutBtn').hidden=false;$('#loggedEmail').textContent=`${currentAdmin.nome||currentUser.email||'Usuário'} · ${roleLabels[currentAdmin.perfil]||currentAdmin.perfil}`;
+      applyPermissions();
       await loadBase();
     }
     $('#loginForm').addEventListener('submit',async e=>{
@@ -586,15 +691,24 @@
       if(p.error)throw p.error;if(s.error)throw s.error;
       professionals=p.data||[];services=s.data||[];
       const activePros=professionals.filter(x=>x.ativo);
-      ['bookPro','manualPro','blockPro','hoursPro','reschedulePro'].forEach(id=>fillSelect(id,professionals.filter(x=>id==='bookPro'||id==='reschedulePro'||x.ativo),id==='bookPro'?'TODOS':''));
+      ['bookPro','manualPro','blockPro','hoursPro','reschedulePro','vipHourPro','collaboratorProfessional'].forEach(id=>fillSelect(id,professionals.filter(x=>x.ativo||id==='bookPro'||id==='reschedulePro'||id==='collaboratorProfessional'),id==='bookPro'?'TODOS':id==='collaboratorProfessional'?'Selecione um profissional':''));
       fillSelect('manualService',services.filter(x=>x.ativo),'');
-      fillSelect('vipHourPro',activePros,'');
       fillSelect('vipOfferService',services.filter(x=>x.ativo),'TODOS OS SERVIÇOS');
       $('#statPros').textContent=String(activePros.length).padStart(2,'0');
       $('#bookDate').value=today();$('#manualDate').value=today();$('#blockDate').value=today();$('#blockFilter').value=today();
       $('#rescheduleDate').min=today();
-      await Promise.all([loadBookings(),loadBlocks(),loadHours(),renderServices(),loadCoupons(),loadVip()]);
-      await loadManualAvailability();
+      const tasks=[];
+      if(can('agenda'))tasks.push(loadBookings());
+      if(can('bloqueios'))tasks.push(loadBlocks());
+      if(can('expediente'))tasks.push(loadHours());
+      if(can('servicos'))tasks.push(renderServices());
+      if(can('profissionais'))tasks.push(renderProfessionals());
+      if(can('cupons'))tasks.push(loadCoupons());
+      if(can('vip'))tasks.push(loadVip());
+      if(can('clientes'))tasks.push(loadCustomers());
+      if(can('agendamento_manual'))tasks.push(loadManualAvailability());
+      if(isMaster())tasks.push(loadCollaborators());
+      await Promise.all(tasks);
     }
     $('#refreshAll').addEventListener('click',async()=>{try{await loadBase();message('globalMessage','Dados atualizados.');}catch(e){message('globalMessage',e.message,false);}});
     $('#reloadBookings').addEventListener('click',loadBookings);
@@ -616,7 +730,7 @@
       $('#bookRows').innerHTML=bookings.map(b=>{
         const s=serviceMap.get(b.servico_id)||{},p=proMap.get(b.profissional_id)||'—';
         const status=b.status;
-        const actions=status==='confirmado'?`<div class="admin-actions"><button class="admin-btn small" data-act="done" data-id="${b.id}">CONCLUIR</button><button class="admin-btn small" data-act="absent" data-id="${b.id}">FALTA</button><button class="admin-btn small" data-act="move" data-id="${b.id}">REMARCAR</button><button class="admin-btn small danger" data-act="cancel" data-id="${b.id}">CANCELAR</button></div>`:'—';
+        const actions=`<div class="admin-actions">${status==='confirmado'?`<button class="admin-btn small" data-act="done" data-id="${b.id}">CONCLUIR</button><button class="admin-btn small" data-act="absent" data-id="${b.id}">FALTA</button><button class="admin-btn small" data-act="move" data-id="${b.id}">REMARCAR</button><button class="admin-btn small danger" data-act="cancel" data-id="${b.id}">CANCELAR</button>`:''}<button class="admin-btn small danger" data-act="delete" data-id="${b.id}">EXCLUIR</button></div>`;
         const finalValue=b.valor_final==null?Number(s.preco||0):Number(b.valor_final);
         const priceDetail=Number(b.desconto||0)>0?`De ${money(s.preco)} · ${b.cupom_codigo?'cupom '+esc(b.cupom_codigo):Number(b.vip_desconto||0)>0?'benefício VIP':'desconto'}`:`${s.duracao_minutos||'—'} min`;
         return `<tr><td data-label="HORÁRIO"><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td data-label="CLIENTE"><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}${b.cliente_vip_id?`<br><strong style="color:#d9ad7c">CLIENTE VIP · ${esc(b.vip_codigo||'')}</strong>`:''}</small></td><td data-label="PROFISSIONAL">${esc(p)}</td><td data-label="SERVIÇO">${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min</small><strong>${money(finalValue)}</strong><small>${priceDetail}</small></td><td data-label="STATUS"><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
@@ -626,6 +740,12 @@
     async function bookingAction(action,id){
       const b=bookings.find(x=>x.id===id);if(!b)return;
       if(action==='move'){openReschedule(b);return;}
+      if(action==='delete'){
+        if(!await confirmDelete(`a reserva de ${b.cliente_nome}`, 'A reserva será apagada definitivamente. O registro deixa de aparecer na agenda e no histórico de utilizações do cupom.'))return;
+        const {error}=await sb.from('reservas').delete().eq('id',id);
+        if(error){message('globalMessage',error.message,false);return;}
+        message('globalMessage','Reserva excluída definitivamente.');await loadBookings();if(can('vip'))await loadVip();if(can('clientes'))await loadCustomers();return;
+      }
       const status={done:'concluido',absent:'ausente',cancel:'cancelado'}[action];
       const labels={concluido:'concluir este atendimento',ausente:'marcar falta',cancelado:'cancelar esta reserva'};
       if(!confirm(`Deseja ${labels[status]}?`))return;
@@ -646,7 +766,7 @@
       e.preventDefault();message('manualResult','Registrando...');
       try{
         if(!$('#manualConsent').checked)throw new Error('Confirme a autorização do cliente.');
-        const data=await rpc('alcapone_agendar',{
+        const data=await rpc('alcapone_agendar_manual',{
           p_profissional_id:$('#manualPro').value,p_servico_id:$('#manualService').value,p_data:$('#manualDate').value,
           p_hora:$('#manualTime').value,p_nome:$('#manualName').value.trim(),p_whatsapp:$('#manualPhone').value.trim(),
           p_email:$('#manualEmail').value.trim()||null,p_observacoes:$('#manualNotes').value.trim()||null,p_cupom:null,p_codigo_vip:$('#manualVipCode').value.trim().toUpperCase()||null
@@ -667,7 +787,7 @@
       const proMap=new Map(professionals.map(x=>[x.id,x.nome]));
       $('#blockList').innerHTML=(data||[]).map(b=>`<div class="admin-list-item"><div><strong>${esc(proMap.get(b.profissional_id)||'—')}</strong><br>${dateBR(date)} · ${timeBR(b.inicio)}–${timeBR(b.fim)}<br><small>${esc(b.motivo||'Sem motivo informado')}</small></div><button class="admin-btn small danger" type="button" data-unblock="${b.id}">REMOVER</button></div>`).join('')||'<p>Nenhum bloqueio nesta data.</p>';
       $$('[data-unblock]', $('#blockList')).forEach(btn=>btn.addEventListener('click',async()=>{
-        if(!confirm('Remover este bloqueio?'))return;
+        if(!await confirmDelete('este bloqueio de horário'))return;
         const {error}=await sb.from('bloqueios').delete().eq('id',btn.dataset.unblock);
         if(error){message('blockMessage',error.message,false);return;}
         message('blockMessage','Bloqueio removido.');await loadBlocks();
@@ -726,16 +846,49 @@
         <div><label>PREÇO (R$)</label><input class="servicePrice" type="number" min="0" step="0.01" value="${Number(s.preco).toFixed(2)}"></div>
         <div><label class="admin-check"><input class="serviceActive" type="checkbox" ${s.ativo?'checked':''}> ATIVO</label></div>
         <button type="button" class="admin-btn small saveService">SALVAR</button>
-      </div>`).join('');
+        <button type="button" class="admin-btn small danger deleteService">EXCLUIR</button>
+      </div>`).join('')||'<p>Nenhum serviço cadastrado.</p>';
       $$('.saveService').forEach(btn=>btn.addEventListener('click',async()=>{
         const row=btn.closest('[data-service]');message('servicesMessage','Salvando serviço...');
         const payload={nome:$('.serviceName',row).value.trim(),duracao_minutos:Number($('.serviceDuration',row).value),preco:Number($('.servicePrice',row).value),ativo:$('.serviceActive',row).checked};
         if(!payload.nome||payload.duracao_minutos<5||payload.duracao_minutos>300||payload.preco<0){message('servicesMessage','Confira nome, duração e preço.',false);return;}
         const {error}=await sb.from('servicos').update(payload).eq('id',row.dataset.service);
         if(error){message('servicesMessage',error.message,false);return;}
-        message('servicesMessage','Serviço atualizado.');const {data}=await sb.from('servicos').select('id,nome,duracao_minutos,preco,ativo').order('nome');services=data||[];await renderServices();
+        message('servicesMessage','Serviço atualizado.');await loadBase();
+      }));
+      $$('.deleteService').forEach(btn=>btn.addEventListener('click',async()=>{
+        const id=btn.closest('[data-service]').dataset.service,s=services.find(x=>x.id===id);if(!s)return;
+        if(!await confirmDelete(`o serviço ${s.nome}`,'Se houver reservas vinculadas, a exclusão será bloqueada para preservar o histórico. Você poderá desativar o serviço.'))return;
+        try{await rpc('alcapone_excluir_servico',{p_id:id});message('servicesMessage',`Serviço ${s.nome} excluído.`);await loadBase();}
+        catch(err){message('servicesMessage',err.message,false);}
       }));
     }
+
+    function resetServiceForm(){
+      $('#serviceForm').reset();$('#serviceEditId').value='';$('#serviceNewDuration').value='30';$('#serviceNewActive').checked=true;
+      $('#saveNewService').textContent='CADASTRAR SERVIÇO ↗';$('#cancelServiceEdit').hidden=true;
+    }
+    $('#serviceForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const id=$('#serviceEditId').value;
+      const payload={nome:$('#serviceNewName').value.trim(),duracao_minutos:Number($('#serviceNewDuration').value),preco:Number($('#serviceNewPrice').value),ativo:$('#serviceNewActive').checked};
+      if(!payload.nome||payload.duracao_minutos<10||payload.duracao_minutos>300||payload.preco<0){message('servicesMessage','Confira nome, duração e preço.',false);return;}
+      const result=id?await sb.from('servicos').update(payload).eq('id',id):await sb.from('servicos').insert(payload);
+      if(result.error){message('servicesMessage',result.error.message,false);return;}
+      resetServiceForm();message('servicesMessage',id?'Serviço atualizado.':'Serviço cadastrado.');
+      const {data,error}=await sb.from('servicos').select('id,nome,duracao_minutos,preco,ativo').order('nome');if(error){message('servicesMessage',error.message,false);return;}services=data||[];await loadBase();
+    });
+    $('#cancelServiceEdit').addEventListener('click',()=>{resetServiceForm();message('servicesMessage','Edição cancelada.');});
+
+    async function renderProfessionals(){
+      $('#professionalRows').innerHTML=professionals.map(pro=>`<tr><td data-label="NOME"><strong>${esc(pro.nome)}</strong></td><td data-label="STATUS"><span class="admin-chip">${pro.ativo?'ATIVO':'INATIVO'}</span></td><td data-label="AÇÕES"><div class="admin-actions"><button type="button" class="admin-btn small" data-prof-edit="${pro.id}">EDITAR</button><button type="button" class="admin-btn small ${pro.ativo?'danger':''}" data-prof-toggle="${pro.id}">${pro.ativo?'DESATIVAR':'ATIVAR'}</button><button type="button" class="admin-btn small danger" data-prof-delete="${pro.id}">EXCLUIR</button></div></td></tr>`).join('')||'<tr><td colspan="3">Nenhum profissional cadastrado.</td></tr>';
+      $$('[data-prof-edit]').forEach(btn=>btn.addEventListener('click',()=>{const pro=professionals.find(x=>x.id===btn.dataset.profEdit);if(!pro)return;$('#professionalEditId').value=pro.id;$('#professionalName').value=pro.nome;$('#professionalActive').checked=pro.ativo;$('#saveProfessional').textContent='SALVAR ALTERAÇÕES ↗';$('#cancelProfessionalEdit').hidden=false;$('#professionalForm').scrollIntoView({behavior:'smooth',block:'start'});}));
+      $$('[data-prof-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{const pro=professionals.find(x=>x.id===btn.dataset.profToggle);if(!pro)return;const {error}=await sb.from('profissionais').update({ativo:!pro.ativo}).eq('id',pro.id);if(error){message('professionalMessage',error.message,false);return;}message('professionalMessage',`Profissional ${pro.ativo?'desativado':'ativado'}.`);await loadBase();}));
+      $$('[data-prof-delete]').forEach(btn=>btn.addEventListener('click',async()=>{const pro=professionals.find(x=>x.id===btn.dataset.profDelete);if(!pro)return;if(!await confirmDelete(`o profissional ${pro.nome}`,'Se houver reservas, bloqueios ou expediente vinculado, a exclusão será bloqueada. Desative o profissional para preservar o histórico.'))return;try{await rpc('alcapone_excluir_profissional',{p_id:pro.id});message('professionalMessage',`Profissional ${pro.nome} excluído.`);await loadBase();}catch(err){message('professionalMessage',err.message,false);}}));
+    }
+    function resetProfessionalForm(){ $('#professionalForm').reset();$('#professionalEditId').value='';$('#professionalActive').checked=true;$('#saveProfessional').textContent='CADASTRAR PROFISSIONAL ↗';$('#cancelProfessionalEdit').hidden=true; }
+    $('#professionalForm').addEventListener('submit',async e=>{e.preventDefault();const id=$('#professionalEditId').value,payload={nome:$('#professionalName').value.trim(),ativo:$('#professionalActive').checked};if(payload.nome.length<2){message('professionalMessage','Informe o nome do profissional.',false);return;}const result=id?await sb.from('profissionais').update(payload).eq('id',id):await sb.from('profissionais').insert(payload);if(result.error){message('professionalMessage',result.error.message,false);return;}resetProfessionalForm();message('professionalMessage',id?'Profissional atualizado.':'Profissional cadastrado.');await loadBase();});
+    $('#cancelProfessionalEdit').addEventListener('click',()=>{resetProfessionalForm();message('professionalMessage','Edição cancelada.');});
 
     let editingCouponId=null;
     function resetCouponForm(){
@@ -772,7 +925,7 @@
       $('#couponRows').innerHTML=couponCampaigns.map(c=>{
         const used=counts.get(c.id)||0, status=couponStatus(c,used);
         const discount=c.tipo_desconto==='percentual'?`${Number(c.valor_desconto).toLocaleString('pt-BR')}%`:`${money(c.valor_desconto)}`;
-        const actions=`<div class="admin-actions"><button class="admin-btn small" type="button" data-edit-coupon="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-toggle-coupon="${c.id}">${c.ativo?'PAUSAR':'ATIVAR'}</button></div>`;
+        const actions=`<div class="admin-actions"><button class="admin-btn small" type="button" data-edit-coupon="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-toggle-coupon="${c.id}">${c.ativo?'PAUSAR':'ATIVAR'}</button><button class="admin-btn small danger" type="button" data-delete-coupon="${c.id}">EXCLUIR</button></div>`;
         return `<tr><td data-label="CAMPANHA"><strong>${esc(c.nome)}</strong><small>Até ${c.max_por_cliente} uso(s) por cliente</small></td><td data-label="CÓDIGO"><strong>${esc(c.codigo)}</strong></td><td data-label="DESCONTO">${esc(discount)}</td><td data-label="PERÍODO">${dateBR(c.data_inicio)}<small>até ${dateBR(c.data_fim)}</small></td><td data-label="UTILIZAÇÕES">${used} / ${c.max_utilizacoes}</td><td data-label="STATUS"><span class="admin-chip">${status}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
       }).join('')||'<tr><td colspan="7">Nenhuma campanha cadastrada.</td></tr>';
       $$('[data-edit-coupon]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -790,6 +943,12 @@
         const {error}=await sb.from('alcapone_campanhas_cupom').update({ativo:!c.ativo}).eq('id',c.id);
         if(error){message('couponMessage',error.message,false);return;}
         message('couponMessage',`Campanha ${c.ativo?'pausada':'ativada'}.`);await loadCoupons();
+      }));
+      $$('[data-delete-coupon]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const c=couponCampaigns.find(item=>item.id===btn.dataset.deleteCoupon);if(!c)return;
+        if(!await confirmDelete(`a campanha ${c.nome}`,'Campanhas com utilizações registradas não podem ser apagadas; pause-as para manter o histórico.'))return;
+        try{await rpc('alcapone_excluir_campanha_cupom',{p_id:c.id});message('couponMessage',`Campanha ${c.nome} excluída.`);await loadCoupons();}
+        catch(err){message('couponMessage',err.message,false);}
       }));
     }
     $('#couponType').addEventListener('change',()=>{
@@ -851,7 +1010,7 @@
 Código: ${c.codigo}
 Use este código junto com o WhatsApp cadastrado ao acessar o agendamento: https://dellsoares.github.io/alcapone-agendamento/
 
-Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel="noopener noreferrer">ENVIAR CÓDIGO ↗</a><button class="admin-btn small" type="button" data-vip-edit="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-vip-toggle="${c.id}">${c.ativo?'SUSPENDER':'ATIVAR'}</button></div></td></tr>`;
+Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel="noopener noreferrer">ENVIAR CÓDIGO ↗</a><button class="admin-btn small" type="button" data-vip-edit="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-vip-toggle="${c.id}">${c.ativo?'SUSPENDER':'ATIVAR'}</button><button class="admin-btn small danger" type="button" data-vip-delete="${c.id}">EXCLUIR</button></div></td></tr>`;
       }).join('')||'<tr><td colspan="9">Nenhum cliente VIP cadastrado.</td></tr>';
       renderWhatsappClientOptions();
       $$('[data-vip-edit]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -866,15 +1025,21 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
         const {error}=await sb.from('alcapone_clientes_vip').update({ativo:!c.ativo}).eq('id',c.id);
         if(error){message('vipClientMessage',error.message,false);return;}message('vipClientMessage',`Acesso VIP ${c.ativo?'suspenso':'ativado'}.`);await loadVip();
       }));
+      $$('[data-vip-delete]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const c=vipClients.find(x=>x.id===btn.dataset.vipDelete);if(!c)return;
+        if(!await confirmDelete(`o cadastro VIP de ${c.nome}`,'Os pontos e resgates serão apagados. Reservas anteriores serão mantidas, mas os dados pessoais serão anonimizados.'))return;
+        try{await rpc('alcapone_excluir_cliente',{p_whatsapp:c.whatsapp});message('vipClientMessage',`Cadastro de ${c.nome} excluído e dados pessoais anonimizados.`);await loadVip();if(can('clientes'))await loadCustomers();}
+        catch(err){message('vipClientMessage',err.message,false);}
+      }));
       const proMap=new Map(professionals.map(x=>[x.id,x.nome])),serviceMap=new Map(services.map(x=>[x.id,x.nome]));
       $('#vipHoursList').innerHTML=vipHours.map(h=>`<div class="admin-list-item"><div><strong>${esc(proMap.get(h.profissional_id)||'Profissional')}</strong><br>${dateBR(h.data)} · ${String(h.hora_inicio).slice(0,5)}–${String(h.hora_fim).slice(0,5)}<br><small>${esc(h.descricao||'Horário exclusivo VIP')} · ${h.ativo?'ATIVO':'INATIVO'}</small></div><button type="button" class="admin-btn small danger" data-vip-hour-delete="${h.id}">REMOVER</button></div>`).join('')||'<p>Nenhum horário VIP cadastrado.</p>';
-      $$('[data-vip-hour-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Remover este horário VIP?'))return;const {error}=await sb.from('alcapone_vip_horarios').delete().eq('id',btn.dataset.vipHourDelete);if(error){message('vipHoursMessage',error.message,false);return;}message('vipHoursMessage','Horário removido.');await loadVip();}));
+      $$('[data-vip-hour-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!await confirmDelete('este horário VIP'))return;const {error}=await sb.from('alcapone_vip_horarios').delete().eq('id',btn.dataset.vipHourDelete);if(error){message('vipHoursMessage',error.message,false);return;}message('vipHoursMessage','Horário removido.');await loadVip();}));
       $('#vipOfferRows').innerHTML=vipOffers.map(o=>`<tr><td data-label="OFERTA"><strong>${esc(o.titulo)}</strong><small>${esc(o.descricao)}</small></td><td data-label="TIPO">${o.tipo==='combo'?'COMBO':'PROMOÇÃO'}</td><td data-label="SERVIÇO">${esc(o.servico_id?serviceMap.get(o.servico_id)||'Serviço':'Todos')}</td><td data-label="DESCONTO">${esc(vipDiscountLabel(o.desconto_tipo,o.desconto_valor))}</td><td data-label="PERÍODO">${dateBR(o.data_inicio)}<small>até ${dateBR(o.data_fim)}</small></td><td data-label="STATUS">${o.ativo?'ATIVA':'PAUSADA'}</td><td data-label="AÇÕES"><div class="admin-actions"><button type="button" class="admin-btn small ${o.ativo?'danger':''}" data-vip-offer-toggle="${o.id}">${o.ativo?'PAUSAR':'ATIVAR'}</button><button type="button" class="admin-btn small danger" data-vip-offer-delete="${o.id}">EXCLUIR</button></div></td></tr>`).join('')||'<tr><td colspan="7">Nenhuma oferta cadastrada.</td></tr>';
       $$('[data-vip-offer-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{const o=vipOffers.find(x=>x.id===btn.dataset.vipOfferToggle);if(!o)return;const {error}=await sb.from('alcapone_vip_ofertas').update({ativo:!o.ativo}).eq('id',o.id);if(error){message('vipOfferMessage',error.message,false);return;}await loadVip();}));
-      $$('[data-vip-offer-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Excluir esta oferta VIP?'))return;const {error}=await sb.from('alcapone_vip_ofertas').delete().eq('id',btn.dataset.vipOfferDelete);if(error){message('vipOfferMessage',error.message,false);return;}await loadVip();}));
+      $$('[data-vip-offer-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!await confirmDelete('esta oferta VIP'))return;const {error}=await sb.from('alcapone_vip_ofertas').delete().eq('id',btn.dataset.vipOfferDelete);if(error){message('vipOfferMessage',error.message,false);return;}await loadVip();}));
       $('#vipRewardsList').innerHTML=vipRewards.map(r=>`<div class="admin-list-item"><div><strong>${esc(r.nome)}</strong><br><small>${Number(r.pontos_necessarios)} pontos · ${esc(r.descricao||'') } · ${r.ativo?'ATIVA':'PAUSADA'}</small></div><div class="admin-actions"><button type="button" class="admin-btn small ${r.ativo?'danger':''}" data-vip-reward-toggle="${r.id}">${r.ativo?'PAUSAR':'ATIVAR'}</button><button type="button" class="admin-btn small danger" data-vip-reward-delete="${r.id}">EXCLUIR</button></div></div>`).join('')||'<p>Nenhuma recompensa cadastrada.</p>';
       $$('[data-vip-reward-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{const r=vipRewards.find(x=>x.id===btn.dataset.vipRewardToggle);if(!r)return;const {error}=await sb.from('alcapone_vip_recompensas').update({ativo:!r.ativo}).eq('id',r.id);if(error){message('vipRewardMessage',error.message,false);return;}await loadVip();}));
-      $$('[data-vip-reward-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Excluir esta recompensa?'))return;const {error}=await sb.from('alcapone_vip_recompensas').delete().eq('id',btn.dataset.vipRewardDelete);if(error){message('vipRewardMessage',error.message,false);return;}await loadVip();}));
+      $$('[data-vip-reward-delete]').forEach(btn=>btn.addEventListener('click',async()=>{const reward=vipRewards.find(x=>x.id===btn.dataset.vipRewardDelete);if(!reward||!await confirmDelete(`a recompensa ${reward.nome}`,'Recompensas com resgates vinculados não podem ser apagadas; pause-as para preservar o histórico.'))return;try{await rpc('alcapone_excluir_recompensa_vip',{p_id:reward.id});message('vipRewardMessage','Recompensa excluída.');await loadVip();}catch(err){message('vipRewardMessage',err.message,false);}}));
       $('#vipRedemptionRows').innerHTML=vipRedemptions.map(r=>{
         const client=vipClients.find(c=>c.id===r.cliente_vip_id),reward=vipRewards.find(x=>x.id===r.recompensa_id);
         const actions=['solicitado','aprovado'].includes(r.status)?`<div class="admin-actions"><button class="admin-btn small primary" type="button" data-vip-redeem-done="${r.id}">MARCAR ENTREGUE</button><button class="admin-btn small danger" type="button" data-vip-redeem-cancel="${r.id}">CANCELAR</button></div>`:'—';
@@ -884,6 +1049,101 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
       $$('[data-vip-redeem-cancel]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Cancelar esta solicitação e liberar os pontos reservados?'))return;const {error}=await sb.from('alcapone_vip_resgates').update({status:'cancelado'}).eq('id',btn.dataset.vipRedeemCancel);if(error){message('vipRedemptionMessage',error.message,false);return;}message('vipRedemptionMessage','Solicitação cancelada; pontos liberados.');await loadVip();}));
       if(configResult.data)$('#vipPointsPerReal').value=Number(configResult.data.pontos_por_real);
     }
+    async function loadCustomers(){
+      customers=await rpc('alcapone_listar_clientes',{});
+      renderCustomers();
+    }
+    function renderCustomers(){
+      const query=$('#customerSearch').value.trim().toLowerCase();
+      const filtered=customers.filter(c=>`${c.nome||''} ${c.whatsapp||''}`.toLowerCase().includes(query));
+      $('#customerRows').innerHTML=filtered.map(c=>{
+        const last=c.ultima_visita?new Date(c.ultima_visita).toLocaleDateString('pt-BR',{timeZone:'America/Sao_Paulo'}):'—';
+        return `<tr><td data-label="CLIENTE"><strong>${esc(c.nome||'Cliente')}</strong></td><td data-label="WHATSAPP">${esc(c.whatsapp||'—')}</td><td data-label="RESERVAS">${Number(c.total_reservas||0)}</td><td data-label="ÚLTIMA VISITA">${last}</td><td data-label="VIP">${c.cliente_vip?`<span class="vip-level-chip">${esc(c.nivel_vip||'VIP')}</span>`:'—'}</td><td data-label="AÇÕES"><button type="button" class="admin-btn small danger" data-customer-delete="${esc(c.whatsapp)}">EXCLUIR CLIENTE</button></td></tr>`;
+      }).join('')||'<tr><td colspan="6">Nenhum cliente encontrado.</td></tr>';
+      $$('[data-customer-delete]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const c=customers.find(x=>x.whatsapp===btn.dataset.customerDelete);if(!c)return;
+        if(!await confirmDelete(`o cliente ${c.nome}`,'O cadastro VIP, pontos e resgates serão removidos. As reservas antigas serão mantidas sem nome, telefone, e-mail ou observações.'))return;
+        try{const result=await rpc('alcapone_excluir_cliente',{p_whatsapp:c.whatsapp});message('customerMessage',`Cliente excluído. ${Number(result?.reservas_anonimizadas||0)} reserva(s) preservada(s) sem dados pessoais.`);await loadCustomers();if(can('vip'))await loadVip();}
+        catch(err){message('customerMessage',err.message,false);}
+      }));
+    }
+    $('#customerSearch').addEventListener('input',renderCustomers);
+    $('#reloadCustomers').addEventListener('click',async()=>{try{await loadCustomers();message('customerMessage','Lista de clientes atualizada.');}catch(err){message('customerMessage',err.message,false);}});
+
+    function selectedCollaboratorPermissions(){
+      return Object.fromEntries($$('#collaboratorPermissions [data-perm]').map(input=>[input.dataset.perm,input.checked]));
+    }
+    function setCollaboratorPermissions(perms={}){
+      $$('#collaboratorPermissions [data-perm]').forEach(input=>{input.checked=perms[input.dataset.perm]===true;});
+    }
+    function applyCollaboratorRolePreset(){
+      const role=$('#collaboratorRole').value;
+      if(role==='MASTER')setCollaboratorPermissions(rolePresets.MASTER);
+      else if(role!=='PERSONALIZADO'&&rolePresets[role])setCollaboratorPermissions(rolePresets[role]);
+      const master=role==='MASTER';
+      $$('#collaboratorPermissions [data-perm]').forEach(input=>input.disabled=master);
+      $('#collaboratorProfessionalWrap').hidden=role!=='BARBEIRO';
+    }
+    function resetCollaboratorForm(){
+      $('#collaboratorForm').reset();$('#collaboratorId').value='';$('#collaboratorRole').value='RECEPCAO';
+      $('#collaboratorPassword').required=true;$('#collaboratorPassword').placeholder='Mínimo de 8 caracteres';
+      $('#collaboratorEmail').readOnly=false;$('#saveCollaborator').textContent='CRIAR ACESSO ↗';$('#cancelCollaboratorEdit').hidden=true;
+      applyCollaboratorRolePreset();
+    }
+    async function loadCollaborators(){
+      if(!isMaster())return;
+      const {data,error}=await sb.from('administradores').select('usuario_id,nome,email,perfil,permissoes,ativo,profissional_id').order('nome');
+      if(error)throw error;collaboratorRows=data||[];
+      renderCollaborators();
+    }
+    function renderCollaborators(){
+      const proMap=new Map(professionals.map(p=>[p.id,p.nome]));
+      $('#collaboratorRows').innerHTML=collaboratorRows.map(u=>`<tr><td data-label="COLABORADOR"><strong>${esc(u.nome||'Colaborador')}</strong><small>${esc(u.email||'')}</small></td><td data-label="PERFIL">${esc(roleLabels[u.perfil]||u.perfil)}</td><td data-label="PROFISSIONAL">${esc(proMap.get(u.profissional_id)||'—')}</td><td data-label="STATUS"><span class="admin-user-state ${u.ativo?'':'off'}">${u.ativo?'ATIVO':'BLOQUEADO'}</span></td><td data-label="AÇÕES"><div class="admin-actions"><button type="button" class="admin-btn small" data-collab-edit="${u.usuario_id}">EDITAR</button><button type="button" class="admin-btn small ${u.ativo?'danger':''}" data-collab-toggle="${u.usuario_id}">${u.ativo?'BLOQUEAR':'REATIVAR'}</button><button type="button" class="admin-btn small danger" data-collab-delete="${u.usuario_id}">EXCLUIR</button></div></td></tr>`).join('')||'<tr><td colspan="5">Nenhum colaborador cadastrado.</td></tr>';
+      $$('[data-collab-edit]').forEach(btn=>btn.addEventListener('click',()=>{
+        const u=collaboratorRows.find(x=>x.usuario_id===btn.dataset.collabEdit);if(!u)return;
+        $('#collaboratorId').value=u.usuario_id;$('#collaboratorName').value=u.nome||'';$('#collaboratorEmail').value=u.email||'';
+        $('#collaboratorPassword').value='';$('#collaboratorPassword').required=false;$('#collaboratorPassword').placeholder='Deixe em branco para manter a senha atual';
+        $('#collaboratorRole').value=u.perfil||'PERSONALIZADO';$('#collaboratorProfessional').value=u.profissional_id||'';
+        applyCollaboratorRolePreset();
+        if(u.perfil==='MASTER')setCollaboratorPermissions(rolePresets.MASTER);else setCollaboratorPermissions(u.permissoes||{});
+        $('#saveCollaborator').textContent='SALVAR ALTERAÇÕES ↗';$('#cancelCollaboratorEdit').hidden=false;
+        $('#collaboratorForm').scrollIntoView({behavior:'smooth',block:'start'});message('collaboratorMessage',`Editando acesso de ${u.nome||u.email}.`);
+      }));
+      $$('[data-collab-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const u=collaboratorRows.find(x=>x.usuario_id===btn.dataset.collabToggle);if(!u)return;
+        if(!confirm(`${u.ativo?'Bloquear':'Reativar'} o acesso de ${u.nome||u.email}?`))return;
+        try{await invokeCollaborator({action:'update',id:u.usuario_id,ativo:!u.ativo});message('collaboratorMessage',`Acesso ${u.ativo?'bloqueado':'reativado'}.`);await loadCollaborators();}
+        catch(err){message('collaboratorMessage',err.message,false);}
+      }));
+      $$('[data-collab-delete]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const u=collaboratorRows.find(x=>x.usuario_id===btn.dataset.collabDelete);if(!u)return;
+        if(!await confirmDelete(`o acesso de ${u.nome||u.email}`,'O usuário será removido da equipe e sua conta de autenticação será excluída. Esta ação é definitiva.'))return;
+        try{await invokeCollaborator({action:'delete',id:u.usuario_id});message('collaboratorMessage',`Acesso de ${u.nome||u.email} excluído.`);await loadCollaborators();}
+        catch(err){message('collaboratorMessage',err.message,false);}
+      }));
+    }
+    async function invokeCollaborator(payload){
+      const {data,error}=await sb.functions.invoke('alcapone-usuarios',{body:payload});
+      if(error)throw new Error(error.message||'Falha ao comunicar com a função segura de usuários.');
+      if(data?.error)throw new Error(data.error);
+      return data;
+    }
+    $('#collaboratorRole').addEventListener('change',()=>{if($('#collaboratorRole').value==='PERSONALIZADO')setCollaboratorPermissions({});applyCollaboratorRolePreset();});
+    $('#cancelCollaboratorEdit').addEventListener('click',()=>{resetCollaboratorForm();message('collaboratorMessage','Edição cancelada.');});
+    $('#collaboratorForm').addEventListener('submit',async e=>{
+      e.preventDefault();
+      const id=$('#collaboratorId').value,role=$('#collaboratorRole').value,password=$('#collaboratorPassword').value;
+      const payload={action:id?'update':'create',id:id||undefined,nome:$('#collaboratorName').value.trim(),email:$('#collaboratorEmail').value.trim().toLowerCase(),perfil:role,permissoes:selectedCollaboratorPermissions(),profissional_id:role==='BARBEIRO'?($('#collaboratorProfessional').value||null):null};
+      if(!payload.nome||!payload.email){message('collaboratorMessage','Informe nome e e-mail.',false);return;}
+      if(!id&&password.length<8){message('collaboratorMessage','A senha inicial precisa ter pelo menos 8 caracteres.',false);return;}
+      if(id&&password)payload.password=password;
+      if(role==='BARBEIRO'&&!payload.profissional_id){message('collaboratorMessage','Selecione o profissional vinculado ao acesso de barbeiro.',false);return;}
+      if(role==='MASTER')payload.permissoes=rolePresets.MASTER;
+      message('collaboratorMessage',id?'Atualizando colaborador...':'Criando acesso...');
+      try{await invokeCollaborator(payload);resetCollaboratorForm();message('collaboratorMessage',id?'Colaborador atualizado.':'Colaborador criado. O acesso já pode ser utilizado.');await loadCollaborators();}
+      catch(err){message('collaboratorMessage',err.message,false);}
+    });
+
     const whatsappTemplates={
       promo:{detail:'OFERTA / DESCONTO',deadline:'VALIDADE DA PROMOÇÃO',detailPlaceholder:'Ex.: 20% de desconto em cortes',deadlinePlaceholder:'Ex.: até sexta-feira, 27/11',text:'Olá, {nome}! 💈\n\nTemos uma PROMOÇÃO RELÂMPAGO especial na Al Capone: {detalhe}.{prazo}\n\nSe quiser aproveitar, responda esta mensagem e nossa equipe orienta você.\n\nAl Capone Barbearia'},
       date:{detail:'DATA OU OCASIÃO',deadline:'CONDIÇÃO / VALIDADE',detailPlaceholder:'Ex.: Dia dos Pais ou Dia do Cliente',deadlinePlaceholder:'Ex.: condição válida até 31/08',text:'Olá, {nome}! ✨\n\nPara celebrar {detalhe}, a Al Capone preparou uma condição especial para você.{prazo}\n\nSerá um prazer receber você!\n\nAl Capone Barbearia'},
@@ -994,6 +1254,9 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
     $('#blockDate').min=today();$('#manualDate').min=today();
     resetCouponForm();
     resetVipClientForm();
+    resetServiceForm();
+    resetProfessionalForm();
+    resetCollaboratorForm();
     $('#vipClientLevel').value='Bronze';
     $('#vipHourDate').min=today();$('#vipHourDate').max=datePlusDays(today(),60);$('#vipHourDate').value=today();
     $('#vipOfferStart').value=today();$('#vipOfferEnd').value=today();

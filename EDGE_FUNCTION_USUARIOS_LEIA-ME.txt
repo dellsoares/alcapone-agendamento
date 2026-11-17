@@ -1,0 +1,15 @@
+EDGE FUNCTION: alcapone-usuarios
+
+ARQUIVO-FONTE:
+supabase/functions/alcapone-usuarios/index.ts
+
+INSTALAÇÃO PELO PAINEL SUPABASE:
+1. Abra o projeto Supabase.
+2. Entre em Edge Functions.
+3. Clique em Deploy a new function / Create function.
+4. Nome da função: alcapone-usuarios
+5. Abra o index.ts que acompanha este projeto, copie o conteúdo integral e cole no editor da função.
+6. Em Edge Function Secrets, confira se existem SUPABASE_URL e SUPABASE_SERVICE_ROLE_KEY. Se a segunda não existir, crie-a usando a chave service_role em Project Settings > API. Não coloque essa chave no GitHub ou no HTML.
+7. Salve e faça Deploy.
+
+A função valida a sessão do usuário e permite operações somente a um MASTER ativo. Ela cria, atualiza, bloqueia, reativa e exclui contas do Supabase Auth. O código service_role fica exclusivamente no ambiente seguro da Edge Function.

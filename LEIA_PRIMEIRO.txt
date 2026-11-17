@@ -63,3 +63,27 @@ ATUALIZAÇÃO — RELACIONAMENTO VIP
 3. A capa passa a exibir o acesso VIP em destaque; o formulário abre em janela modal.
 4. O painel permite registrar nível (Bronze, Prata, Ouro, Platina ou Black), aniversário e observações.
 5. A Central de Mensagens monta modelos editáveis para promoção relâmpago, data comemorativa, aniversário, lembrete e aviso de horário. O botão abre a conversa do WhatsApp com o texto preenchido; o envio é manual.
+
+
+ATUALIZAÇÃO — GESTÃO DE COLABORADORES E EXCLUSÕES (06)
+1. Execute 06_GESTAO_ACESSOS_EXCLUSAO.sql no Supabase SQL Editor, depois dos scripts 01 a 05.
+2. A migração promove os administradores que já existem a MASTER. Assim, os dois acessos atuais da Al Capone continuam com poderes iguais.
+3. Antes de publicar o admin.html atualizado, implante a Edge Function alcapone-usuarios: no Supabase Dashboard, abra Edge Functions, crie uma função com esse nome e copie o conteúdo de supabase/functions/alcapone-usuarios/index.ts.
+4. A função precisa do secret SUPABASE_SERVICE_ROLE_KEY (Settings > API > service_role). O secret fica somente no Supabase; nunca copie essa chave para HTML, JavaScript ou GitHub. SUPABASE_URL é fornecida pelo ambiente das Edge Functions.
+5. Depois de implantar a função, publique os arquivos estáticos atualizados no GitHub Pages.
+
+GESTÃO DE COLABORADORES
+- MASTER: acesso total e gerenciamento de usuários.
+- GERENTE: permissões administrativas pré-selecionadas, ajustáveis.
+- RECEPÇÃO: agenda, agendamento manual, bloqueios e clientes, ajustáveis.
+- BARBEIRO: acesso vinculado a um profissional; a agenda, bloqueios e expediente são limitados ao profissional associado.
+- PERSONALIZADO: o MASTER marca individualmente os módulos permitidos.
+- A criação, alteração e exclusão de contas de autenticação ocorre na Edge Function segura, usando service_role apenas no servidor.
+- O sistema impede excluir o próprio acesso e impede remover o último MASTER ativo.
+
+EXCLUSÕES
+- Reservas: podem ser excluídas definitivamente após confirmação digitando EXCLUIR. Isso remove também os registros de uso de cupom e pontos vinculados à reserva.
+- Profissionais e serviços: exclusão definitiva somente quando não houver histórico ou vínculos. Se houver, desative para preservar a integridade dos registros.
+- Campanhas de cupom e recompensas VIP: exclusão definitiva somente quando não houver utilizações ou resgates vinculados. Caso contrário, pause.
+- Clientes: a exclusão remove o cadastro VIP, pontos, resgates e utilizações de cupom vinculadas; as reservas antigas permanecem, mas os dados pessoais são anonimizados para preservar o histórico sem manter nome, telefone, e-mail ou observações.
+- As exclusões sensíveis pedem confirmação e a digitação de EXCLUIR.
