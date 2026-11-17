@@ -1,0 +1,13 @@
+AL CAPONE — GESTÃO MASTER 4.2
+
+1) Supabase > Edge Functions > alcapone-usuarios (plural) > Code.
+2) Substitua TODO o conteúdo de supabase/functions/alcapone-usuarios/index.ts pelo arquivo que acompanha esta versão.
+3) Clique em Deploy updates.
+4) Publique os arquivos deste ZIP no GitHub, substituindo os atuais e mantendo a estrutura de pastas.
+5) Atualize o painel com Ctrl+F5.
+
+Não execute SQL novamente.
+Não exclua a função alcapone-usuario (singular) nesta atualização.
+A função correta usada pelo painel é alcapone-usuarios (plural).
+
+A função retorna erros operacionais em JSON com HTTP 200 para que o painel mostre a mensagem específica, em vez do aviso genérico de non-2xx. Erros de implantação continuam aparecendo nos logs da Edge Function.

@@ -16,7 +16,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css?v=vip-relacionamento-1">
+  <link rel="stylesheet" href="style.css?v=gestao-master-4-2">
   <style>
     .admin-wrap{width:min(1280px,calc(100% - 36px));margin:0 auto}
     .admin-page{min-height:82vh;padding:48px 0 80px;background:radial-gradient(circle at 100% 0%,#48301f 0%,transparent 46%),#16110d}
@@ -1123,9 +1123,28 @@ Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel
       }));
     }
     async function invokeCollaborator(payload){
-      const {data,error}=await sb.functions.invoke('alcapone-usuarios',{body:payload});
-      if(error)throw new Error(error.message||'Falha ao comunicar com a função segura de usuários.');
-      if(data?.error)throw new Error(data.error);
+      const {data:{session},error:sessionError}=await sb.auth.getSession();
+      if(sessionError)throw new Error(sessionError.message||'Não foi possível validar sua sessão.');
+      if(!session?.access_token)throw new Error('Sua sessão expirou. Entre novamente no painel.');
+      const {data,error}=await sb.functions.invoke('alcapone-usuarios',{
+        body:payload,
+        headers:{Authorization:`Bearer ${session.access_token}`}
+      });
+      if(error){
+        let detail=error.message||'Falha ao comunicar com a função segura de usuários.';
+        try{
+          const response=error.context;
+          if(response && typeof response.clone==='function'){
+            const raw=await response.clone().text();
+            if(raw){
+              try{const parsed=JSON.parse(raw);detail=parsed.error||parsed.message||raw;}
+              catch{detail=raw;}
+            }
+          }
+        }catch{}
+        throw new Error(detail);
+      }
+      if(data?.ok===false||data?.error)throw new Error(data.error||'A operação não foi concluída.');
       return data;
     }
     $('#collaboratorRole').addEventListener('change',()=>{if($('#collaboratorRole').value==='PERSONALIZADO')setCollaboratorPermissions({});applyCollaboratorRolePreset();});
