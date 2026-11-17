@@ -4,8 +4,10 @@ O endereço e a chave pública já estão configurados no app.js e minha.js.
 Não há servidor Python, Docker nem Render neste projeto.
 
 1. No Supabase, acesse o SQL Editor e execute o arquivo 01_ATIVAR_NO_SUPABASE.sql.
-2. Depois publique esta pasta como site estático no GitHub Pages, em um repositório SEPARADO da landing atual.
-3. Abra o endereço do GitHub Pages e teste um agendamento. Ele será salvo no banco Supabase.
+2. Execute também o arquivo 02_PAINEL_ADMIN.sql para habilitar o painel administrativo.
+3. Para ativar os cupons, execute o arquivo 03_CUPONS_DESCONTO.sql UMA VEZ, depois dos arquivos 01 e 02.
+4. Publique esta pasta como site estático no GitHub Pages, em um repositório SEPARADO da landing atual.
+5. Abra o endereço do GitHub Pages e teste um agendamento. Ele será salvo no banco Supabase.
 
 IMPORTANTE: a landing atual não foi modificada. Este projeto contém apenas
 as telas de agendamento e consulta/cancelamento do cliente. Painel de barbeiros
@@ -35,3 +37,12 @@ RECUPERAÇÃO DE SENHA DO PAINEL:
 - Adicione no Supabase > Authentication > URL Configuration, em Redirect URLs, este endereço:
   https://dellsoares.github.io/alcapone-agendamento/recuperar-senha.html
 - A página recuperar-senha.html permite definir a nova senha pelo link recebido por e-mail.
+
+
+ATUALIZAÇÃO — CAMPANHAS E CUPONS DE DESCONTO:
+- O painel administrativo ganhou a seção CAMPANHAS E CUPONS.
+- É possível criar/editar campanhas com código, desconto percentual ou fixo, período, quantidade total de usos e limite por cliente.
+- As campanhas podem ser pausadas e reativadas.
+- O cliente informa o código na etapa final do agendamento, depois de preencher o WhatsApp.
+- O banco valida novamente o cupom no momento da reserva e registra o desconto aplicado.
+- Antes de publicar os arquivos atualizados, execute 03_CUPONS_DESCONTO.sql no SQL Editor do Supabase.

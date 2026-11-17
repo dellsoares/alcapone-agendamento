@@ -217,6 +217,7 @@
           <button type="button" data-tab="bloqueios">BLOQUEIOS</button>
           <button type="button" data-tab="horarios">EXPEDIENTE</button>
           <button type="button" data-tab="servicos">SERVIÇOS</button>
+          <button type="button" data-tab="cupons">CUPONS</button>
         </nav>
 
         <section class="admin-section active" data-section="agenda">
@@ -302,6 +303,42 @@
             <p id="servicesMessage" class="admin-note"></p>
           </div>
         </section>
+
+        <section class="admin-section" data-section="cupons">
+          <div class="admin-card">
+            <h2>CAMPANHAS E CUPONS</h2>
+            <p>Crie códigos promocionais, defina o desconto, o período da campanha e o limite de utilizações. O cliente informa o código na etapa final do agendamento.</p>
+            <form id="couponForm">
+              <input type="hidden" id="couponId">
+              <div class="admin-fields">
+                <div><label for="couponName">NOME DA CAMPANHA</label><input id="couponName" maxlength="100" required placeholder="Ex.: Semana do Cliente"></div>
+                <div><label for="couponCode">CÓDIGO DO CUPOM</label><input id="couponCode" maxlength="30" required placeholder="Ex.: CAPONE15" autocapitalize="characters"></div>
+                <div><label for="couponType">TIPO DE DESCONTO</label><select id="couponType" required><option value="percentual">PORCENTAGEM (%)</option><option value="fixo">VALOR FIXO (R$)</option></select></div>
+                <div><label for="couponValue">VALOR DO DESCONTO</label><input id="couponValue" type="number" min="0.01" max="100" step="0.01" required placeholder="Ex.: 15"></div>
+                <div><label for="couponStart">INÍCIO DA CAMPANHA</label><input id="couponStart" type="date" required></div>
+                <div><label for="couponEnd">FIM DA CAMPANHA</label><input id="couponEnd" type="date" required></div>
+                <div><label for="couponMaxUses">QUANTIDADE TOTAL DE CUPONS</label><input id="couponMaxUses" type="number" min="1" step="1" required value="50"></div>
+                <div><label for="couponMaxPerClient">USOS POR CLIENTE</label><input id="couponMaxPerClient" type="number" min="1" step="1" required value="1"></div>
+              </div>
+              <label class="admin-check" style="margin-top:15px"><input id="couponActive" type="checkbox" checked> CAMPANHA ATIVA</label>
+              <div class="admin-actions" style="margin-top:16px">
+                <button id="saveCoupon" class="admin-btn primary" type="submit">CRIAR CAMPANHA ↗</button>
+                <button id="cancelCouponEdit" class="admin-btn" type="button" hidden>CANCELAR EDIÇÃO</button>
+              </div>
+            </form>
+            <p id="couponMessage" class="admin-note" role="status"></p>
+          </div>
+          <div class="admin-card">
+            <h2>CAMPANHAS CADASTRADAS</h2>
+            <p>Acompanhe o consumo de cada campanha. Campanhas pausadas ou encerradas não aceitam novos cupons.</p>
+            <div class="admin-table-wrap">
+              <table class="admin-table">
+                <thead><tr><th>CAMPANHA</th><th>CÓDIGO</th><th>DESCONTO</th><th>PERÍODO</th><th>UTILIZAÇÕES</th><th>STATUS</th><th>AÇÕES</th></tr></thead>
+                <tbody id="couponRows"><tr><td colspan="7">Carregando campanhas...</td></tr></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
         <p id="globalMessage" class="admin-note" role="status"></p>
       </section>
     </div>
@@ -354,7 +391,7 @@
     const endDay = d => isoLocal(nextDate(d),'00:00');
     const nextDate = d => {const x=new Date(d+'T12:00:00-03:00');x.setDate(x.getDate()+1);return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(x)};
     const weekdays = ['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'];
-    let professionals=[], services=[], bookings=[], schedules=[], currentUser=null, rescheduleBooking=null;
+    let professionals=[], services=[], bookings=[], schedules=[], couponCampaigns=[], currentUser=null, rescheduleBooking=null;
 
     function message(id, text, ok=true){const el=$('#'+id);if(!el)return;el.textContent=text||'';el.classList.toggle('error',!ok);}
     function fillSelect(id, items, label){const el=$('#'+id);if(!el)return;const old=el.value;el.innerHTML=(label?`<option value="">${esc(label)}</option>`:'')+items.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');if(items.some(x=>String(x.id)===old))el.value=old;}
@@ -442,7 +479,7 @@
       $('#statPros').textContent=String(activePros.length).padStart(2,'0');
       $('#bookDate').value=today();$('#manualDate').value=today();$('#blockDate').value=today();$('#blockFilter').value=today();
       $('#rescheduleDate').min=today();
-      await Promise.all([loadBookings(),loadBlocks(),loadHours(),renderServices()]);
+      await Promise.all([loadBookings(),loadBlocks(),loadHours(),renderServices(),loadCoupons()]);
       await loadManualAvailability();
     }
     $('#refreshAll').addEventListener('click',async()=>{try{await loadBase();message('globalMessage','Dados atualizados.');}catch(e){message('globalMessage',e.message,false);}});
@@ -457,7 +494,7 @@
       bookings=data||[];
       const proMap=new Map(professionals.map(x=>[x.id,x.nome])),serviceMap=new Map(services.map(x=>[x.id,x]));
       const confirmed=bookings.filter(x=>x.status==='confirmado');
-      const revenue=confirmed.reduce((sum,b)=>sum+Number(serviceMap.get(b.servico_id)?.preco||0),0);
+      const revenue=confirmed.reduce((sum,b)=>sum+Number(b.valor_final ?? serviceMap.get(b.servico_id)?.preco ?? 0),0);
       $('#statToday').textContent=String(bookings.filter(x=>x.inicio>=startDay(today())&&x.inicio<endDay(today())).length).padStart(2,'0');
       $('#statConfirmed').textContent=String(confirmed.length).padStart(2,'0');
       $('#dayCount').textContent=String(bookings.length).padStart(2,'0');
@@ -466,7 +503,9 @@
         const s=serviceMap.get(b.servico_id)||{},p=proMap.get(b.profissional_id)||'—';
         const status=b.status;
         const actions=status==='confirmado'?`<div class="admin-actions"><button class="admin-btn small" data-act="done" data-id="${b.id}">CONCLUIR</button><button class="admin-btn small" data-act="absent" data-id="${b.id}">FALTA</button><button class="admin-btn small" data-act="move" data-id="${b.id}">REMARCAR</button><button class="admin-btn small danger" data-act="cancel" data-id="${b.id}">CANCELAR</button></div>`:'—';
-        return `<tr><td data-label="HORÁRIO"><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td data-label="CLIENTE"><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}</small></td><td data-label="PROFISSIONAL">${esc(p)}</td><td data-label="SERVIÇO">${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min · ${money(s.preco)}</small></td><td data-label="STATUS"><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
+        const finalValue=b.valor_final==null?Number(s.preco||0):Number(b.valor_final);
+        const priceDetail=Number(b.desconto||0)>0?`De ${money(s.preco)} · cupom ${esc(b.cupom_codigo||'')}`:`${s.duracao_minutos||'—'} min`;
+        return `<tr><td data-label="HORÁRIO"><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td data-label="CLIENTE"><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}</small></td><td data-label="PROFISSIONAL">${esc(p)}</td><td data-label="SERVIÇO">${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min</small><strong>${money(finalValue)}</strong><small>${priceDetail}</small></td><td data-label="STATUS"><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
       }).join('')||'<tr><td colspan="6">Nenhuma reserva encontrada nesta data.</td></tr>';
       $$('[data-act]', $('#bookRows')).forEach(btn=>btn.addEventListener('click',()=>bookingAction(btn.dataset.act,btn.dataset.id)));
     }
@@ -496,7 +535,7 @@
         const data=await rpc('alcapone_agendar',{
           p_profissional_id:$('#manualPro').value,p_servico_id:$('#manualService').value,p_data:$('#manualDate').value,
           p_hora:$('#manualTime').value,p_nome:$('#manualName').value.trim(),p_whatsapp:$('#manualPhone').value.trim(),
-          p_email:$('#manualEmail').value.trim()||null,p_observacoes:$('#manualNotes').value.trim()||null
+          p_email:$('#manualEmail').value.trim()||null,p_observacoes:$('#manualNotes').value.trim()||null,p_cupom:null
         });
         message('manualResult',`Reserva ${data.code} registrada. Envie a confirmação ao cliente pelo WhatsApp.`);
         const phone=$('#manualPhone').value.replace(/\D/g,'');
@@ -584,6 +623,91 @@
       }));
     }
 
+    let editingCouponId=null;
+    function resetCouponForm(){
+      $('#couponForm').reset();
+      editingCouponId=null;
+      $('#couponId').value='';
+      $('#couponActive').checked=true;
+      $('#couponMaxUses').value='50';
+      $('#couponMaxPerClient').value='1';
+      $('#couponStart').value=today();
+      $('#couponEnd').value=today();
+      $('#saveCoupon').textContent='CRIAR CAMPANHA ↗';
+      $('#cancelCouponEdit').hidden=true;
+    }
+    function couponStatus(c,used){
+      if(!c.ativo)return 'PAUSADA';
+      if(today()<c.data_inicio)return 'PROGRAMADA';
+      if(today()>c.data_fim)return 'ENCERRADA';
+      if(used>=Number(c.max_utilizacoes))return 'ESGOTADA';
+      return 'ATIVA';
+    }
+    async function loadCoupons(){
+      const campaignResult=await sb.from('alcapone_campanhas_cupom').select('*').order('criado_em',{ascending:false});
+      if(campaignResult.error)throw campaignResult.error;
+      couponCampaigns=campaignResult.data||[];
+      const usageCounts=await Promise.all(couponCampaigns.map(c=>
+        sb.from('alcapone_cupons_utilizados').select('id',{count:'exact',head:true}).eq('campanha_id',c.id)
+      ));
+      const counts=new Map();
+      usageCounts.forEach((result,index)=>{
+        if(result.error)throw result.error;
+        counts.set(couponCampaigns[index].id,result.count||0);
+      });
+      $('#couponRows').innerHTML=couponCampaigns.map(c=>{
+        const used=counts.get(c.id)||0, status=couponStatus(c,used);
+        const discount=c.tipo_desconto==='percentual'?`${Number(c.valor_desconto).toLocaleString('pt-BR')}%`:`${money(c.valor_desconto)}`;
+        const actions=`<div class="admin-actions"><button class="admin-btn small" type="button" data-edit-coupon="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-toggle-coupon="${c.id}">${c.ativo?'PAUSAR':'ATIVAR'}</button></div>`;
+        return `<tr><td data-label="CAMPANHA"><strong>${esc(c.nome)}</strong><small>Até ${c.max_por_cliente} uso(s) por cliente</small></td><td data-label="CÓDIGO"><strong>${esc(c.codigo)}</strong></td><td data-label="DESCONTO">${esc(discount)}</td><td data-label="PERÍODO">${dateBR(c.data_inicio)}<small>até ${dateBR(c.data_fim)}</small></td><td data-label="UTILIZAÇÕES">${used} / ${c.max_utilizacoes}</td><td data-label="STATUS"><span class="admin-chip">${status}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
+      }).join('')||'<tr><td colspan="7">Nenhuma campanha cadastrada.</td></tr>';
+      $$('[data-edit-coupon]').forEach(btn=>btn.addEventListener('click',()=>{
+        const c=couponCampaigns.find(item=>item.id===btn.dataset.editCoupon);if(!c)return;
+        editingCouponId=c.id;$('#couponId').value=c.id;$('#couponName').value=c.nome;$('#couponCode').value=c.codigo;
+        $('#couponType').value=c.tipo_desconto;$('#couponValue').value=Number(c.valor_desconto).toFixed(2);
+        $('#couponStart').value=c.data_inicio;$('#couponEnd').value=c.data_fim;
+        $('#couponMaxUses').value=c.max_utilizacoes;$('#couponMaxPerClient').value=c.max_por_cliente;$('#couponActive').checked=c.ativo;
+        $('#saveCoupon').textContent='SALVAR ALTERAÇÕES ↗';$('#cancelCouponEdit').hidden=false;
+        $('#couponForm').scrollIntoView({behavior:'smooth',block:'start'});
+        message('couponMessage',`Editando a campanha ${c.nome}.`);
+      }));
+      $$('[data-toggle-coupon]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const c=couponCampaigns.find(item=>item.id===btn.dataset.toggleCoupon);if(!c)return;
+        const {error}=await sb.from('alcapone_campanhas_cupom').update({ativo:!c.ativo}).eq('id',c.id);
+        if(error){message('couponMessage',error.message,false);return;}
+        message('couponMessage',`Campanha ${c.ativo?'pausada':'ativada'}.`);await loadCoupons();
+      }));
+    }
+    $('#couponType').addEventListener('change',()=>{
+      $('#couponValue').max=$('#couponType').value==='percentual'?'100':'';
+      $('#couponValue').placeholder=$('#couponType').value==='percentual'?'Ex.: 15':'Ex.: 10,00';
+    });
+    $('#couponCode').addEventListener('input',()=>{$('#couponCode').value=$('#couponCode').value.toUpperCase().replace(/[^A-Z0-9_-]/g,'');});
+    $('#cancelCouponEdit').addEventListener('click',()=>{resetCouponForm();message('couponMessage','Edição cancelada.');});
+    $('#couponForm').addEventListener('submit',async e=>{
+      e.preventDefault();message('couponMessage','Salvando campanha...');
+      const payload={
+        nome:$('#couponName').value.trim(),codigo:$('#couponCode').value.trim().toUpperCase(),
+        tipo_desconto:$('#couponType').value,valor_desconto:Number($('#couponValue').value),
+        data_inicio:$('#couponStart').value,data_fim:$('#couponEnd').value,
+        max_utilizacoes:Number($('#couponMaxUses').value),max_por_cliente:Number($('#couponMaxPerClient').value),
+        ativo:$('#couponActive').checked
+      };
+      if(!payload.nome||!/^[A-Z0-9_-]{3,30}$/.test(payload.codigo)){message('couponMessage','Informe um nome e um código de 3 a 30 caracteres (letras, números, hífen ou sublinhado).',false);return;}
+      if(!payload.data_inicio||!payload.data_fim||payload.data_fim<payload.data_inicio){message('couponMessage','Confira o período da campanha.',false);return;}
+      if(!Number.isFinite(payload.valor_desconto)||payload.valor_desconto<=0||(payload.tipo_desconto==='percentual'&&payload.valor_desconto>100)){message('couponMessage','Confira o valor do desconto. Percentuais devem ser de até 100%.',false);return;}
+      if(!Number.isInteger(payload.max_utilizacoes)||payload.max_utilizacoes<1||!Number.isInteger(payload.max_por_cliente)||payload.max_por_cliente<1){message('couponMessage','Informe limites de utilização válidos.',false);return;}
+      try{
+        const wasEditing=Boolean(editingCouponId);
+        const result=wasEditing
+          ? await sb.from('alcapone_campanhas_cupom').update(payload).eq('id',editingCouponId)
+          : await sb.from('alcapone_campanhas_cupom').insert(payload);
+        if(result.error)throw result.error;
+        resetCouponForm();message('couponMessage',wasEditing?'Campanha atualizada.':'Campanha criada.');
+        await loadCoupons();
+      }catch(err){message('couponMessage',err.message.includes('duplicate key')?'Este código já está cadastrado. Escolha outro.':err.message,false);}
+    });
+
     async function openReschedule(b){
       rescheduleBooking=b;
       $('#rescheduleId').value=b.id;$('#rescheduleClient').textContent=`${b.cliente_nome} · ${timeBR(b.inicio)} · ${b.id.slice(0,8).toUpperCase()}`;
@@ -615,6 +739,7 @@
     });
 
     $('#blockDate').min=today();$('#manualDate').min=today();
+    resetCouponForm();
     const {data:{session}}=await sb.auth.getSession();
     if(session){try{await showPanel();}catch(e){message('loginMessage',e.message,false);}}
   })();

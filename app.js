@@ -22,7 +22,7 @@
     return payload;
   }
   let data=null,step=1,dateOffset=0,fetching=0;
-  const booking={service_id:null, professional_id:null, date:null, time:null};
+  const booking={service_id:null, professional_id:null, date:null, time:null, coupon:null};
   const state=()=>({service:data.services.find(x=>x.id===booking.service_id),pro:data.professionals.find(x=>x.id===booking.professional_id)});
   $('#currentYear').textContent=new Date().getFullYear();
   async function init(){
@@ -47,7 +47,8 @@
         <span class="choice-foot"><small>${s.duration} MIN</small><b>${s.from_price?'A partir de ':''}${brl(s.price_cents)}</b></span></button>`;
     }).join('');
     $$('.choice').forEach(btn=>btn.addEventListener('click',()=>{
-      booking.service_id=btn.dataset.id; booking.time=null;
+      booking.service_id=btn.dataset.id; booking.time=null; booking.coupon=null;
+      $('#clientCouponCode').value='';setCouponMessage('');
       $$('.choice').forEach(el=>{el.classList.toggle('selected',el===btn);el.setAttribute('aria-pressed',String(el===btn))});updateNext();
     }));
   }
@@ -77,7 +78,7 @@
   }
   $('#nextBtn').addEventListener('click',()=>{if(step===4){submit();return;}if(!$('#nextBtn').disabled)go(step+1)});
   $('#backBtn').addEventListener('click',()=>go(Math.max(1,step-1)));
-  $('#newBooking').addEventListener('click',()=>{booking.service_id=null;booking.professional_id=null;booking.time=null;renderServices();renderPros();go(1)});
+  $('#newBooking').addEventListener('click',()=>{booking.service_id=null;booking.professional_id=null;booking.time=null;booking.coupon=null;$('#clientCouponCode').value='';setCouponMessage('');renderServices();renderPros();go(1)});
   function renderDates(){
     if(!data)return;
     const current=addDays(data.today,dateOffset),last=addDays(data.today,data.max_days);
@@ -113,9 +114,46 @@
       $$('.time-slot').forEach(el=>el.addEventListener('click',()=>{booking.time=el.dataset.time;$$('.time-slot').forEach(e=>{e.classList.toggle('selected',e===el);e.setAttribute('aria-pressed',String(e===el))});updateNext()}));
     }catch(e){if(seq===fetching)$('#slotArea').innerHTML=`<p class="empty-note">${esc(e.message)}. Tente outra data ou recarregue a página.</p>`;}
   }
+  function setCouponMessage(text,type=''){
+    const el=$('#couponMessage');if(!el)return;
+    el.textContent=text||'';el.classList.toggle('success',type==='success');el.classList.toggle('error',type==='error');
+  }
+  function clearAppliedCoupon(message=''){
+    if(!booking.coupon)return;
+    booking.coupon=null;setCouponMessage(message,'');
+    if(step===4)renderSummary();
+  }
+  $('#applyCoupon').addEventListener('click',async()=>{
+    const code=$('#clientCouponCode').value.trim().toUpperCase();
+    const phone=$('#clientPhone').value.trim();
+    const phoneDigits=phone.replace(/\D/g,'');
+    const serviceId=booking.service_id;
+    if(!code){setCouponMessage('Digite o código do cupom.','error');return;}
+    if(phoneDigits.length<10){setCouponMessage('Informe primeiro seu WhatsApp com DDD.','error');$('#clientPhone').focus();return;}
+    const button=$('#applyCoupon');button.disabled=true;button.textContent='VALIDANDO...';$('#nextBtn').disabled=true;setCouponMessage('Consultando campanha...');
+    try{
+      const result=await rpc('alcapone_validar_cupom',{p_codigo:code,p_servico_id:serviceId,p_whatsapp:phone});
+      if(!result?.valid)throw new Error(result?.message||'Não foi possível aplicar este cupom.');
+      if($('#clientCouponCode').value.trim().toUpperCase()!==code||$('#clientPhone').value.replace(/\D/g,'')!==phoneDigits||booking.service_id!==serviceId)throw new Error('Os dados foram alterados durante a validação. Aplique o cupom novamente.');
+      booking.coupon={...result,code:result.code||code,service_id:serviceId,phone:phoneDigits};
+      setCouponMessage(`Cupom ${booking.coupon.code} aplicado. Desconto de ${brl(Math.round(Number(result.discount_amount)*100))}.`,'success');
+      renderSummary();
+    }catch(e){booking.coupon=null;setCouponMessage(e.message,'error');renderSummary();}
+    finally{button.disabled=false;button.textContent='APLICAR';updateNext();}
+  });
+  $('#clientCouponCode').addEventListener('input',()=>{
+    if(booking.coupon&&$('#clientCouponCode').value.trim().toUpperCase()!==booking.coupon.code)clearAppliedCoupon('Código alterado. Aplique novamente para validar.');
+  });
+  $('#clientPhone').addEventListener('input',()=>{
+    if(booking.coupon&&$('#clientPhone').value.replace(/\D/g,'')!==booking.coupon.phone)clearAppliedCoupon('WhatsApp alterado. Aplique o cupom novamente.');
+  });
   function renderSummary(){
     const {service,pro}=state();
-    $('#summary').innerHTML=`<div class="summary-row"><span>SERVIÇO</span><strong>${esc(service.name)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(pro.name)}</strong></div><div class="summary-row"><span>DATA E HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div><div class="summary-row"><span>DURAÇÃO</span><strong>${service.duration} minutos</strong></div><div class="summary-row summary-total"><span>VALOR ${service.from_price?'INICIAL':'DO SERVIÇO'}</span><strong>${brl(service.price_cents)}</strong></div>`;
+    const discountCents=booking.coupon?Math.round(Number(booking.coupon.discount_amount)*100):0;
+    const totalCents=Math.max(0,service.price_cents-discountCents);
+    const couponRows=booking.coupon?`<div class="summary-row"><span>VALOR ORIGINAL</span><strong>${brl(service.price_cents)}</strong></div><div class="summary-row"><span>CUPOM</span><strong>${esc(booking.coupon.code)}</strong></div><div class="summary-row"><span>DESCONTO</span><strong>− ${brl(discountCents)}</strong></div>`:'';
+    const totalLabel=booking.coupon?'VALOR FINAL':`VALOR ${service.from_price?'INICIAL':'DO SERVIÇO'}`;
+    $('#summary').innerHTML=`<div class="summary-row"><span>SERVIÇO</span><strong>${esc(service.name)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(pro.name)}</strong></div><div class="summary-row"><span>DATA E HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div><div class="summary-row"><span>DURAÇÃO</span><strong>${service.duration} minutos</strong></div>${couponRows}<div class="summary-row summary-total"><span>${totalLabel}</span><strong>${brl(totalCents)}</strong></div>`;
     $('#formError').hidden=true;
   }
   function calendarDateParts(date, time, duration){
@@ -169,9 +207,12 @@
     digits=digits.replace(/^0/,'');
     const whatsappNumber=`55${digits}`;
     const dateLabel=formattedDate(booking.date);
-    const valueLabel=`${service.from_price?'A partir de ':''}${brl(service.price_cents)}`;
+    const finalPriceCents=Math.round(Number(payload.final_price ?? service.price_cents/100)*100);
+    const discountCents=Math.round(Number(payload.discount_amount||0)*100);
+    const valueLabel=`${service.from_price?'A partir de ':''}${brl(finalPriceCents)}`;
+    const couponLine=payload.coupon_code?`\nValor original: ${brl(service.price_cents)}\nCupom: ${payload.coupon_code}\nDesconto: ${brl(discountCents)}`:'';
     const manageUrl=new URL(`minha.html?token=${encodeURIComponent(payload.token)}`,locationHref()).href;
-    const message=`AGENDAMENTO CONFIRMADO — AL CAPONE BARBEARIA\n\nHora: ${booking.time}\nData: ${dateLabel}\nProfissional: ${professional.name}\nServiço: ${service.name}\nValor: ${valueLabel}\n\nCódigo da reserva: ${code}\nConsultar ou cancelar: ${manageUrl}`;
+    const message=`AGENDAMENTO CONFIRMADO — AL CAPONE BARBEARIA\n\nHora: ${booking.time}\nData: ${dateLabel}\nProfissional: ${professional.name}\nServiço: ${service.name}\nValor: ${valueLabel}${couponLine}\n\nCódigo da reserva: ${code}\nConsultar ou cancelar: ${manageUrl}`;
     $('#whatsappSummary').href=`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     $('#whatsappSummary').setAttribute('aria-label','Abrir uma conversa com seu próprio número no WhatsApp, com o resumo do agendamento preenchido. Você só precisa tocar em Enviar.');
   }
@@ -189,9 +230,13 @@
       const payload=await rpc('alcapone_agendar',{
         p_profissional_id:booking.professional_id,p_servico_id:booking.service_id,
         p_data:booking.date,p_hora:booking.time,p_nome:fullName,p_whatsapp:phone,
-        p_email:email||null,p_observacoes:$('#clientNotes').value.trim()||null
+        p_email:email||null,p_observacoes:$('#clientNotes').value.trim()||null,
+        p_cupom:booking.coupon?.code||null
       });
-      $('#confirmationInfo').innerHTML=`<div class="summary-row"><span>CÓDIGO</span><strong>${esc(payload.code)}</strong></div><div class="summary-row"><span>SERVIÇO</span><strong>${esc(payload.service)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(payload.professional)}</strong></div><div class="summary-row"><span>DATA/HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div>`;
+      const finalPriceCents=Math.round(Number(payload.final_price ?? state().service.price_cents/100)*100);
+      const discountCents=Math.round(Number(payload.discount_amount||0)*100);
+      const couponInfo=payload.coupon_code?`<div class="summary-row"><span>VALOR ORIGINAL</span><strong>${brl(state().service.price_cents)}</strong></div><div class="summary-row"><span>CUPOM</span><strong>${esc(payload.coupon_code)}</strong></div><div class="summary-row"><span>DESCONTO</span><strong>− ${brl(discountCents)}</strong></div>`:'';
+      $('#confirmationInfo').innerHTML=`<div class="summary-row"><span>CÓDIGO</span><strong>${esc(payload.code)}</strong></div><div class="summary-row"><span>SERVIÇO</span><strong>${esc(payload.service)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(payload.professional)}</strong></div><div class="summary-row"><span>DATA/HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div>${couponInfo}<div class="summary-row summary-total"><span>VALOR FINAL</span><strong>${brl(finalPriceCents)}</strong></div>`;
       $('#manageLink').href='minha.html?token='+encodeURIComponent(payload.token);
       prepareConfirmationActions({payload,service:state().service,professional:state().pro,clientName:fullName,phone});
       go(5);

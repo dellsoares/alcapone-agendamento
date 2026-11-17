@@ -58,6 +58,11 @@
               <form id="bookingForm" novalidate>
                 <label for="clientName">SEU NOME <b>*</b></label><input id="clientName" name="name" autocomplete="name" maxlength="100" required placeholder="Como podemos chamar você?">
                 <div class="field-grid"><div><label for="clientPhone">WHATSAPP COM DDD <b>*</b></label><input id="clientPhone" name="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" required placeholder="(31) 99999-9999"></div><div><label for="clientEmail">E-MAIL <small>(OPCIONAL)</small></label><input id="clientEmail" name="email" type="email" autocomplete="email" placeholder="voce@exemplo.com" maxlength="150"></div></div>
+                <div class="coupon-entry">
+                  <label for="clientCouponCode">CUPOM DE DESCONTO <small>(OPCIONAL)</small></label>
+                  <div class="coupon-entry-row"><input id="clientCouponCode" type="text" maxlength="30" autocomplete="off" placeholder="Digite seu código"><button id="applyCoupon" type="button">APLICAR</button></div>
+                  <p id="couponMessage" class="coupon-message" role="status" aria-live="polite"></p>
+                </div>
                 <label for="clientNotes">OBSERVAÇÃO <small>(OPCIONAL)</small></label><textarea id="clientNotes" rows="2" maxlength="400" placeholder="Algo que a equipe deva saber antes do atendimento?"></textarea>
                 <label class="consent"><input type="checkbox" id="consent"><span>Concordo com o uso dos meus dados para realizar e administrar esta reserva. Dados usados apenas para a finalidade do agendamento. <b>*</b></span></label>
                 <p class="form-error" id="formError" role="alert" hidden></p>
