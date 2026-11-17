@@ -218,6 +218,7 @@
           <button type="button" data-tab="horarios">EXPEDIENTE</button>
           <button type="button" data-tab="servicos">SERVIÇOS</button>
           <button type="button" data-tab="cupons">CUPONS</button>
+          <button type="button" data-tab="vip">CLIENTES VIP</button>
         </nav>
 
         <section class="admin-section active" data-section="agenda">
@@ -250,6 +251,7 @@
                 <div><label for="manualName">NOME DO CLIENTE</label><input id="manualName" maxlength="100" required></div>
                 <div><label for="manualPhone">WHATSAPP COM DDD</label><input id="manualPhone" type="tel" maxlength="25" required placeholder="(31) 99999-9999"></div>
                 <div><label for="manualEmail">E-MAIL (OPCIONAL)</label><input id="manualEmail" type="email" maxlength="150"></div>
+                <div><label for="manualVipCode">CÓDIGO VIP (OPCIONAL)</label><input id="manualVipCode" maxlength="30" autocapitalize="characters" placeholder="Informe se o cliente for VIP"></div>
                 <div><label for="manualNotes">OBSERVAÇÃO (OPCIONAL)</label><input id="manualNotes" maxlength="400"></div>
               </div>
               <label class="admin-check"><input id="manualConsent" type="checkbox" required> Cliente autorizou o uso dos dados para esta reserva.</label>
@@ -339,6 +341,82 @@
             </div>
           </div>
         </section>
+
+        <section class="admin-section" data-section="vip">
+          <div class="admin-card">
+            <h2>CADASTRAR CLIENTE VIP</h2>
+            <p>O código é individual e fica vinculado ao WhatsApp informado. Gere um código e entregue-o diretamente ao cliente.</p>
+            <form id="vipClientForm">
+              <input type="hidden" id="vipClientId">
+              <div class="admin-fields">
+                <div><label for="vipClientName">NOME DO CLIENTE</label><input id="vipClientName" maxlength="100" required placeholder="Nome completo"></div>
+                <div><label for="vipClientPhone">WHATSAPP COM DDD</label><input id="vipClientPhone" type="tel" maxlength="25" required placeholder="(31) 99999-9999"></div>
+                <div><label for="vipClientCode">CÓDIGO VIP INDIVIDUAL</label><input id="vipClientCode" maxlength="30" required placeholder="VIP-XXXXXXXX" autocapitalize="characters"></div>
+                <div style="display:flex;align-items:end"><button id="generateVipCode" class="admin-btn" type="button" style="width:100%">GERAR CÓDIGO ↻</button></div>
+                <div><label for="vipDiscountType">BENEFÍCIO DE DESCONTO</label><select id="vipDiscountType"><option value="nenhum">SEM DESCONTO FIXO</option><option value="percentual">PORCENTAGEM (%)</option><option value="fixo">VALOR FIXO (R$)</option></select></div>
+                <div><label for="vipDiscountValue">VALOR DO DESCONTO</label><input id="vipDiscountValue" type="number" min="0" step="0.01" value="0" placeholder="Ex.: 10"></div>
+              </div>
+              <label for="vipClientNotes">OBSERVAÇÕES INTERNAS (OPCIONAL)</label><textarea id="vipClientNotes" rows="2" maxlength="400" placeholder="Informações para a equipe"></textarea>
+              <label class="admin-check"><input id="vipClientActive" type="checkbox" checked> ACESSO VIP ATIVO</label>
+              <div class="admin-actions" style="margin-top:14px"><button id="saveVipClient" class="admin-btn primary" type="submit">CADASTRAR CLIENTE VIP ↗</button><button id="cancelVipClientEdit" class="admin-btn" type="button" hidden>CANCELAR EDIÇÃO</button></div>
+            </form>
+            <p id="vipClientMessage" class="admin-note" role="status"></p>
+          </div>
+          <div class="admin-card">
+            <h2>CLIENTES VIP CADASTRADOS</h2>
+            <p>Consulte os códigos, benefícios, pontuação e situação de cada cliente.</p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>CLIENTE</th><th>WHATSAPP</th><th>CÓDIGO</th><th>DESCONTO</th><th>PONTOS</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="vipClientRows"><tr><td colspan="7">Carregando clientes VIP...</td></tr></tbody></table></div>
+          </div>
+          <div class="admin-grid">
+            <div class="admin-card">
+              <h2>HORÁRIOS EXCLUSIVOS</h2>
+              <p>Cadastre faixas extras por profissional e data. Elas só aparecem para clientes com código VIP válido.</p>
+              <form id="vipHoursForm">
+                <label for="vipHourPro">PROFISSIONAL</label><select id="vipHourPro" required></select>
+                <label for="vipHourDate">DATA</label><input id="vipHourDate" type="date" required>
+                <div class="admin-fields"><div><label for="vipHourStart">INÍCIO</label><input id="vipHourStart" type="time" value="08:00" required></div><div><label for="vipHourEnd">FIM</label><input id="vipHourEnd" type="time" value="09:00" required></div></div>
+                <label for="vipHourDescription">IDENTIFICAÇÃO (OPCIONAL)</label><input id="vipHourDescription" maxlength="120" placeholder="Ex.: Horário antecipado VIP">
+                <button class="admin-btn primary" type="submit" style="margin-top:14px">ADICIONAR HORÁRIO VIP ↗</button>
+              </form>
+              <p id="vipHoursMessage" class="admin-note"></p><div id="vipHoursList"></div>
+            </div>
+            <div class="admin-card">
+              <h2>PONTUAÇÃO E RECOMPENSAS</h2>
+              <p>Defina quantos pontos o cliente recebe por real pago e cadastre os serviços que poderão ser resgatados.</p>
+              <form id="vipPointsForm"><label for="vipPointsPerReal">PONTOS POR R$ 1,00 PAGO</label><input id="vipPointsPerReal" type="number" min="0.01" max="1000" step="0.01" value="1" required><button class="admin-btn primary" type="submit" style="margin-top:12px">SALVAR REGRA DE PONTOS ↗</button></form>
+              <p id="vipPointsMessage" class="admin-note"></p>
+              <div class="admin-divider" style="height:1px;background:#4b3628;margin:20px 0"></div>
+              <form id="vipRewardForm"><label for="vipRewardName">NOME DA RECOMPENSA</label><input id="vipRewardName" maxlength="100" required placeholder="Ex.: Corte gratuito"><label for="vipRewardDescription">DESCRIÇÃO</label><input id="vipRewardDescription" maxlength="300" placeholder="Detalhes da recompensa"><label for="vipRewardPoints">PONTOS NECESSÁRIOS</label><input id="vipRewardPoints" type="number" min="1" step="1" required placeholder="Ex.: 500"><label class="admin-check"><input id="vipRewardActive" type="checkbox" checked> RECOMPENSA ATIVA</label><button class="admin-btn primary" type="submit" style="margin-top:12px">CADASTRAR RECOMPENSA ↗</button></form>
+              <p id="vipRewardMessage" class="admin-note"></p><div id="vipRewardsList"></div>
+            </div>
+          </div>
+          <div class="admin-card">
+            <h2>PROMOÇÕES E COMBOS VIP</h2>
+            <p>Cadastre promoções com desconto automático ou combos informativos. O agendamento atual seleciona um serviço por reserva; combos aparecem na área VIP com suas condições para a equipe orientar o cliente.</p>
+            <form id="vipOfferForm">
+              <div class="admin-fields">
+                <div><label for="vipOfferTitle">TÍTULO</label><input id="vipOfferTitle" maxlength="100" required placeholder="Ex.: Combo corte + barba"></div>
+                <div><label for="vipOfferType">TIPO</label><select id="vipOfferType"><option value="promocao">PROMOÇÃO</option><option value="combo">COMBO</option></select></div>
+                <div><label for="vipOfferService">SERVIÇO APLICÁVEL</label><select id="vipOfferService"><option value="">TODOS OS SERVIÇOS</option></select></div>
+                <div><label for="vipOfferDiscountType">DESCONTO</label><select id="vipOfferDiscountType"><option value="nenhum">SOMENTE DIVULGAÇÃO</option><option value="percentual">PORCENTAGEM (%)</option><option value="fixo">VALOR FIXO (R$)</option></select></div>
+                <div><label for="vipOfferDiscountValue">VALOR DO DESCONTO</label><input id="vipOfferDiscountValue" type="number" min="0" step="0.01" value="0"></div>
+                <div><label for="vipOfferStart">INÍCIO</label><input id="vipOfferStart" type="date" required></div>
+                <div><label for="vipOfferEnd">TÉRMINO</label><input id="vipOfferEnd" type="date" required></div>
+              </div>
+              <label for="vipOfferDescription">DESCRIÇÃO DA OFERTA</label><textarea id="vipOfferDescription" rows="2" maxlength="500" required placeholder="Explique o benefício, as condições e o que está incluído"></textarea>
+              <label class="admin-check"><input id="vipOfferActive" type="checkbox" checked> OFERTA ATIVA</label>
+              <button class="admin-btn primary" type="submit" style="margin-top:14px">CADASTRAR OFERTA VIP ↗</button>
+            </form>
+            <p id="vipOfferMessage" class="admin-note"></p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>OFERTA</th><th>TIPO</th><th>SERVIÇO</th><th>DESCONTO</th><th>PERÍODO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="vipOfferRows"><tr><td colspan="7">Carregando ofertas...</td></tr></tbody></table></div>
+          </div>
+          <div class="admin-card">
+            <h2>SOLICITAÇÕES DE RESGATE</h2>
+            <p>Quando o cliente solicita uma recompensa, os pontos ficam reservados. A pontuação só é debitada quando a equipe marca o resgate como entregue.</p>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>CLIENTE</th><th>RECOMPENSA</th><th>PONTOS</th><th>SOLICITAÇÃO</th><th>STATUS</th><th>AÇÕES</th></tr></thead><tbody id="vipRedemptionRows"><tr><td colspan="6">Carregando solicitações...</td></tr></tbody></table></div>
+            <p id="vipRedemptionMessage" class="admin-note"></p>
+          </div>
+        </section>
         <p id="globalMessage" class="admin-note" role="status"></p>
       </section>
     </div>
@@ -390,8 +468,9 @@
     const startDay = d => isoLocal(d,'00:00');
     const endDay = d => isoLocal(nextDate(d),'00:00');
     const nextDate = d => {const x=new Date(d+'T12:00:00-03:00');x.setDate(x.getDate()+1);return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(x)};
+    const datePlusDays = (d,n) => {const x=new Date(d+'T12:00:00-03:00');x.setDate(x.getDate()+n);return new Intl.DateTimeFormat('en-CA',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(x)};
     const weekdays = ['DOMINGO','SEGUNDA','TERÇA','QUARTA','QUINTA','SEXTA','SÁBADO'];
-    let professionals=[], services=[], bookings=[], schedules=[], couponCampaigns=[], currentUser=null, rescheduleBooking=null;
+    let professionals=[], services=[], bookings=[], schedules=[], couponCampaigns=[], vipClients=[], vipHours=[], vipOffers=[], vipRewards=[], vipRedemptions=[], currentUser=null, rescheduleBooking=null, editingVipClientId=null;
 
     function message(id, text, ok=true){const el=$('#'+id);if(!el)return;el.textContent=text||'';el.classList.toggle('error',!ok);}
     function fillSelect(id, items, label){const el=$('#'+id);if(!el)return;const old=el.value;el.innerHTML=(label?`<option value="">${esc(label)}</option>`:'')+items.map(x=>`<option value="${esc(x.id)}">${esc(x.nome)}</option>`).join('');if(items.some(x=>String(x.id)===old))el.value=old;}
@@ -476,10 +555,12 @@
       const activePros=professionals.filter(x=>x.ativo);
       ['bookPro','manualPro','blockPro','hoursPro','reschedulePro'].forEach(id=>fillSelect(id,professionals.filter(x=>id==='bookPro'||id==='reschedulePro'||x.ativo),id==='bookPro'?'TODOS':''));
       fillSelect('manualService',services.filter(x=>x.ativo),'');
+      fillSelect('vipHourPro',activePros,'');
+      fillSelect('vipOfferService',services.filter(x=>x.ativo),'TODOS OS SERVIÇOS');
       $('#statPros').textContent=String(activePros.length).padStart(2,'0');
       $('#bookDate').value=today();$('#manualDate').value=today();$('#blockDate').value=today();$('#blockFilter').value=today();
       $('#rescheduleDate').min=today();
-      await Promise.all([loadBookings(),loadBlocks(),loadHours(),renderServices(),loadCoupons()]);
+      await Promise.all([loadBookings(),loadBlocks(),loadHours(),renderServices(),loadCoupons(),loadVip()]);
       await loadManualAvailability();
     }
     $('#refreshAll').addEventListener('click',async()=>{try{await loadBase();message('globalMessage','Dados atualizados.');}catch(e){message('globalMessage',e.message,false);}});
@@ -504,8 +585,8 @@
         const status=b.status;
         const actions=status==='confirmado'?`<div class="admin-actions"><button class="admin-btn small" data-act="done" data-id="${b.id}">CONCLUIR</button><button class="admin-btn small" data-act="absent" data-id="${b.id}">FALTA</button><button class="admin-btn small" data-act="move" data-id="${b.id}">REMARCAR</button><button class="admin-btn small danger" data-act="cancel" data-id="${b.id}">CANCELAR</button></div>`:'—';
         const finalValue=b.valor_final==null?Number(s.preco||0):Number(b.valor_final);
-        const priceDetail=Number(b.desconto||0)>0?`De ${money(s.preco)} · cupom ${esc(b.cupom_codigo||'')}`:`${s.duracao_minutos||'—'} min`;
-        return `<tr><td data-label="HORÁRIO"><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td data-label="CLIENTE"><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}</small></td><td data-label="PROFISSIONAL">${esc(p)}</td><td data-label="SERVIÇO">${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min</small><strong>${money(finalValue)}</strong><small>${priceDetail}</small></td><td data-label="STATUS"><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
+        const priceDetail=Number(b.desconto||0)>0?`De ${money(s.preco)} · ${b.cupom_codigo?'cupom '+esc(b.cupom_codigo):Number(b.vip_desconto||0)>0?'benefício VIP':'desconto'}`:`${s.duracao_minutos||'—'} min`;
+        return `<tr><td data-label="HORÁRIO"><strong>${dateBR(date)}</strong><small>${timeBR(b.inicio)}–${timeBR(b.fim)}</small></td><td data-label="CLIENTE"><strong>${esc(b.cliente_nome)}</strong><small>${esc(b.cliente_whatsapp)}${b.cliente_email?' · '+esc(b.cliente_email):''}${b.cliente_vip_id?`<br><strong style="color:#d9ad7c">CLIENTE VIP · ${esc(b.vip_codigo||'')}</strong>`:''}</small></td><td data-label="PROFISSIONAL">${esc(p)}</td><td data-label="SERVIÇO">${esc(s.nome||'—')}<small>${s.duracao_minutos||'—'} min</small><strong>${money(finalValue)}</strong><small>${priceDetail}</small></td><td data-label="STATUS"><span class="admin-chip ${esc(status)}">${esc(status.toUpperCase())}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
       }).join('')||'<tr><td colspan="6">Nenhuma reserva encontrada nesta data.</td></tr>';
       $$('[data-act]', $('#bookRows')).forEach(btn=>btn.addEventListener('click',()=>bookingAction(btn.dataset.act,btn.dataset.id)));
     }
@@ -517,17 +598,17 @@
       if(!confirm(`Deseja ${labels[status]}?`))return;
       const {error}=await sb.from('reservas').update({status}).eq('id',id);
       if(error){message('globalMessage',error.message,false);return;}
-      message('globalMessage','Status atualizado.');await loadBookings();
+      message('globalMessage','Status atualizado.');await loadBookings();if(status==='concluido')await loadVip();
     }
 
     async function loadManualAvailability(){
       const pro=$('#manualPro').value,service=$('#manualService').value,date=$('#manualDate').value,el=$('#manualTime');
       if(!pro||!service||!date){el.innerHTML='<option value="">Selecione profissional, serviço e data</option>';return;}
       el.innerHTML='<option value="">CONSULTANDO...</option>';
-      try{const slots=await rpc('alcapone_disponibilidade',{p_profissional_id:pro,p_servico_id:service,p_data:date});el.innerHTML=(slots||[]).map(x=>`<option value="${esc(x.hora)}">${esc(x.hora)}</option>`).join('')||'<option value="">SEM HORÁRIOS DISPONÍVEIS</option>';}
+      try{const slots=await rpc('alcapone_disponibilidade',{p_profissional_id:pro,p_servico_id:service,p_data:date,p_codigo_vip:$('#manualVipCode').value.trim().toUpperCase()||null,p_whatsapp:$('#manualPhone').value.trim()||null});el.innerHTML=(slots||[]).map(x=>`<option value="${esc(x.hora)}">${esc(x.hora)}${x.vip_exclusivo?' · VIP':''}</option>`).join('')||'<option value="">SEM HORÁRIOS DISPONÍVEIS</option>';}
       catch(e){el.innerHTML='<option value="">ERRO AO CONSULTAR</option>';message('manualResult',e.message,false);}
     }
-    ['manualPro','manualService','manualDate'].forEach(id=>$('#'+id).addEventListener('change',loadManualAvailability));
+    ['manualPro','manualService','manualDate','manualPhone','manualVipCode'].forEach(id=>$('#'+id).addEventListener('change',loadManualAvailability));
     $('#manualForm').addEventListener('submit',async e=>{
       e.preventDefault();message('manualResult','Registrando...');
       try{
@@ -535,7 +616,7 @@
         const data=await rpc('alcapone_agendar',{
           p_profissional_id:$('#manualPro').value,p_servico_id:$('#manualService').value,p_data:$('#manualDate').value,
           p_hora:$('#manualTime').value,p_nome:$('#manualName').value.trim(),p_whatsapp:$('#manualPhone').value.trim(),
-          p_email:$('#manualEmail').value.trim()||null,p_observacoes:$('#manualNotes').value.trim()||null,p_cupom:null
+          p_email:$('#manualEmail').value.trim()||null,p_observacoes:$('#manualNotes').value.trim()||null,p_cupom:null,p_codigo_vip:$('#manualVipCode').value.trim().toUpperCase()||null
         });
         message('manualResult',`Reserva ${data.code} registrada. Envie a confirmação ao cliente pelo WhatsApp.`);
         const phone=$('#manualPhone').value.replace(/\D/g,'');
@@ -708,6 +789,93 @@
       }catch(err){message('couponMessage',err.message.includes('duplicate key')?'Este código já está cadastrado. Escolha outro.':err.message,false);}
     });
 
+    const normalizePhone=value=>{let d=String(value||'').replace(/\D/g,'');if((d.length===12||d.length===13)&&d.startsWith('55'))d=d.slice(2);return d;};
+    const vipCode=()=>{const bytes=new Uint8Array(5);crypto.getRandomValues(bytes);return 'VIP-'+[...bytes].map(x=>x.toString(16).padStart(2,'0')).join('').toUpperCase();};
+    function resetVipClientForm(){
+      $('#vipClientForm').reset();editingVipClientId=null;$('#vipClientId').value='';$('#vipClientActive').checked=true;
+      $('#vipDiscountType').value='nenhum';$('#vipDiscountValue').value='0';$('#vipClientCode').value=vipCode();
+      $('#saveVipClient').textContent='CADASTRAR CLIENTE VIP ↗';$('#cancelVipClientEdit').hidden=true;
+    }
+    function vipDiscountLabel(type,value){if(type==='percentual')return `${Number(value).toLocaleString('pt-BR')}%`;if(type==='fixo')return money(value);return '—';}
+    async function loadVip(){
+      const [clientsResult,pointsResult,hoursResult,offersResult,rewardsResult,redemptionsResult,configResult]=await Promise.all([
+        sb.from('alcapone_clientes_vip').select('*').order('criado_em',{ascending:false}),
+        sb.from('alcapone_vip_pontos').select('cliente_vip_id,pontos'),
+        sb.from('alcapone_vip_horarios').select('*').order('data').order('hora_inicio'),
+        sb.from('alcapone_vip_ofertas').select('*').order('criado_em',{ascending:false}),
+        sb.from('alcapone_vip_recompensas').select('*').order('pontos_necessarios'),
+        sb.from('alcapone_vip_resgates').select('*').order('solicitado_em',{ascending:false}),
+        sb.from('alcapone_vip_pontos_config').select('*').eq('id',true).maybeSingle()
+      ]);
+      for(const result of [clientsResult,pointsResult,hoursResult,offersResult,rewardsResult,redemptionsResult,configResult])if(result.error)throw result.error;
+      vipClients=clientsResult.data||[];vipHours=hoursResult.data||[];vipOffers=offersResult.data||[];vipRewards=rewardsResult.data||[];vipRedemptions=redemptionsResult.data||[];
+      const balances=new Map();(pointsResult.data||[]).forEach(row=>balances.set(row.cliente_vip_id,(balances.get(row.cliente_vip_id)||0)+Number(row.pontos||0)));
+      const reserved=new Map();vipRedemptions.filter(r=>['solicitado','aprovado'].includes(r.status)).forEach(row=>reserved.set(row.cliente_vip_id,(reserved.get(row.cliente_vip_id)||0)+Number(row.pontos_necessarios||0)));
+      $('#vipClientRows').innerHTML=vipClients.map(c=>{
+        const points=balances.get(c.id)||0,available=points-(reserved.get(c.id)||0);
+        return `<tr><td data-label="CLIENTE"><strong>${esc(c.nome)}</strong><small>${esc(c.observacoes||'')}</small></td><td data-label="WHATSAPP">${esc(c.whatsapp)}</td><td data-label="CÓDIGO"><strong>${esc(c.codigo)}</strong></td><td data-label="DESCONTO">${esc(vipDiscountLabel(c.desconto_tipo,c.desconto_valor))}</td><td data-label="PONTOS"><strong>${points}</strong><small>${available} disponíveis</small></td><td data-label="STATUS"><span class="admin-chip">${c.ativo?'ATIVO':'SUSPENSO'}</span></td><td data-label="AÇÕES"><div class="admin-actions"><a class="admin-btn small" href="https://wa.me/55${esc(c.whatsapp_normalizado)}?text=${encodeURIComponent(`Olá, ${c.nome}! Seu acesso VIP da Al Capone está liberado.
+
+Código: ${c.codigo}
+Use este código junto com o WhatsApp cadastrado ao acessar o agendamento: https://dellsoares.github.io/alcapone-agendamento/
+
+Seus benefícios e pontos estarão disponíveis por lá.`)}" target="_blank" rel="noopener noreferrer">ENVIAR CÓDIGO ↗</a><button class="admin-btn small" type="button" data-vip-edit="${c.id}">EDITAR</button><button class="admin-btn small ${c.ativo?'danger':''}" type="button" data-vip-toggle="${c.id}">${c.ativo?'SUSPENDER':'ATIVAR'}</button></div></td></tr>`;
+      }).join('')||'<tr><td colspan="7">Nenhum cliente VIP cadastrado.</td></tr>';
+      $$('[data-vip-edit]').forEach(btn=>btn.addEventListener('click',()=>{
+        const c=vipClients.find(x=>x.id===btn.dataset.vipEdit);if(!c)return;editingVipClientId=c.id;
+        $('#vipClientId').value=c.id;$('#vipClientName').value=c.nome;$('#vipClientPhone').value=c.whatsapp;$('#vipClientCode').value=c.codigo;
+        $('#vipDiscountType').value=c.desconto_tipo;$('#vipDiscountValue').value=Number(c.desconto_valor||0);$('#vipClientNotes').value=c.observacoes||'';$('#vipClientActive').checked=c.ativo;
+        $('#saveVipClient').textContent='SALVAR ALTERAÇÕES ↗';$('#cancelVipClientEdit').hidden=false;$('#vipClientForm').scrollIntoView({behavior:'smooth',block:'start'});message('vipClientMessage',`Editando cadastro de ${c.nome}.`);
+      }));
+      $$('[data-vip-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{
+        const c=vipClients.find(x=>x.id===btn.dataset.vipToggle);if(!c)return;
+        const {error}=await sb.from('alcapone_clientes_vip').update({ativo:!c.ativo}).eq('id',c.id);
+        if(error){message('vipClientMessage',error.message,false);return;}message('vipClientMessage',`Acesso VIP ${c.ativo?'suspenso':'ativado'}.`);await loadVip();
+      }));
+      const proMap=new Map(professionals.map(x=>[x.id,x.nome])),serviceMap=new Map(services.map(x=>[x.id,x.nome]));
+      $('#vipHoursList').innerHTML=vipHours.map(h=>`<div class="admin-list-item"><div><strong>${esc(proMap.get(h.profissional_id)||'Profissional')}</strong><br>${dateBR(h.data)} · ${String(h.hora_inicio).slice(0,5)}–${String(h.hora_fim).slice(0,5)}<br><small>${esc(h.descricao||'Horário exclusivo VIP')} · ${h.ativo?'ATIVO':'INATIVO'}</small></div><button type="button" class="admin-btn small danger" data-vip-hour-delete="${h.id}">REMOVER</button></div>`).join('')||'<p>Nenhum horário VIP cadastrado.</p>';
+      $$('[data-vip-hour-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Remover este horário VIP?'))return;const {error}=await sb.from('alcapone_vip_horarios').delete().eq('id',btn.dataset.vipHourDelete);if(error){message('vipHoursMessage',error.message,false);return;}message('vipHoursMessage','Horário removido.');await loadVip();}));
+      $('#vipOfferRows').innerHTML=vipOffers.map(o=>`<tr><td data-label="OFERTA"><strong>${esc(o.titulo)}</strong><small>${esc(o.descricao)}</small></td><td data-label="TIPO">${o.tipo==='combo'?'COMBO':'PROMOÇÃO'}</td><td data-label="SERVIÇO">${esc(o.servico_id?serviceMap.get(o.servico_id)||'Serviço':'Todos')}</td><td data-label="DESCONTO">${esc(vipDiscountLabel(o.desconto_tipo,o.desconto_valor))}</td><td data-label="PERÍODO">${dateBR(o.data_inicio)}<small>até ${dateBR(o.data_fim)}</small></td><td data-label="STATUS">${o.ativo?'ATIVA':'PAUSADA'}</td><td data-label="AÇÕES"><div class="admin-actions"><button type="button" class="admin-btn small ${o.ativo?'danger':''}" data-vip-offer-toggle="${o.id}">${o.ativo?'PAUSAR':'ATIVAR'}</button><button type="button" class="admin-btn small danger" data-vip-offer-delete="${o.id}">EXCLUIR</button></div></td></tr>`).join('')||'<tr><td colspan="7">Nenhuma oferta cadastrada.</td></tr>';
+      $$('[data-vip-offer-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{const o=vipOffers.find(x=>x.id===btn.dataset.vipOfferToggle);if(!o)return;const {error}=await sb.from('alcapone_vip_ofertas').update({ativo:!o.ativo}).eq('id',o.id);if(error){message('vipOfferMessage',error.message,false);return;}await loadVip();}));
+      $$('[data-vip-offer-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Excluir esta oferta VIP?'))return;const {error}=await sb.from('alcapone_vip_ofertas').delete().eq('id',btn.dataset.vipOfferDelete);if(error){message('vipOfferMessage',error.message,false);return;}await loadVip();}));
+      $('#vipRewardsList').innerHTML=vipRewards.map(r=>`<div class="admin-list-item"><div><strong>${esc(r.nome)}</strong><br><small>${Number(r.pontos_necessarios)} pontos · ${esc(r.descricao||'') } · ${r.ativo?'ATIVA':'PAUSADA'}</small></div><div class="admin-actions"><button type="button" class="admin-btn small ${r.ativo?'danger':''}" data-vip-reward-toggle="${r.id}">${r.ativo?'PAUSAR':'ATIVAR'}</button><button type="button" class="admin-btn small danger" data-vip-reward-delete="${r.id}">EXCLUIR</button></div></div>`).join('')||'<p>Nenhuma recompensa cadastrada.</p>';
+      $$('[data-vip-reward-toggle]').forEach(btn=>btn.addEventListener('click',async()=>{const r=vipRewards.find(x=>x.id===btn.dataset.vipRewardToggle);if(!r)return;const {error}=await sb.from('alcapone_vip_recompensas').update({ativo:!r.ativo}).eq('id',r.id);if(error){message('vipRewardMessage',error.message,false);return;}await loadVip();}));
+      $$('[data-vip-reward-delete]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Excluir esta recompensa?'))return;const {error}=await sb.from('alcapone_vip_recompensas').delete().eq('id',btn.dataset.vipRewardDelete);if(error){message('vipRewardMessage',error.message,false);return;}await loadVip();}));
+      $('#vipRedemptionRows').innerHTML=vipRedemptions.map(r=>{
+        const client=vipClients.find(c=>c.id===r.cliente_vip_id),reward=vipRewards.find(x=>x.id===r.recompensa_id);
+        const actions=['solicitado','aprovado'].includes(r.status)?`<div class="admin-actions"><button class="admin-btn small primary" type="button" data-vip-redeem-done="${r.id}">MARCAR ENTREGUE</button><button class="admin-btn small danger" type="button" data-vip-redeem-cancel="${r.id}">CANCELAR</button></div>`:'—';
+        return `<tr><td data-label="CLIENTE"><strong>${esc(client?.nome||'Cliente')}</strong><small>${esc(client?.whatsapp||'')}</small></td><td data-label="RECOMPENSA">${esc(reward?.nome||'Recompensa')}</td><td data-label="PONTOS">${Number(r.pontos_necessarios)}</td><td data-label="SOLICITAÇÃO">${new Date(r.solicitado_em).toLocaleDateString('pt-BR')}</td><td data-label="STATUS"><span class="admin-chip">${r.status.toUpperCase()}</span></td><td data-label="AÇÕES">${actions}</td></tr>`;
+      }).join('')||'<tr><td colspan="6">Nenhuma solicitação de resgate.</td></tr>';
+      $$('[data-vip-redeem-done]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Confirmar que a recompensa foi entregue? Os pontos serão debitados.'))return;const {error}=await sb.from('alcapone_vip_resgates').update({status:'entregue'}).eq('id',btn.dataset.vipRedeemDone);if(error){message('vipRedemptionMessage',error.message,false);return;}message('vipRedemptionMessage','Resgate concluído e pontos debitados.');await loadVip();}));
+      $$('[data-vip-redeem-cancel]').forEach(btn=>btn.addEventListener('click',async()=>{if(!confirm('Cancelar esta solicitação e liberar os pontos reservados?'))return;const {error}=await sb.from('alcapone_vip_resgates').update({status:'cancelado'}).eq('id',btn.dataset.vipRedeemCancel);if(error){message('vipRedemptionMessage',error.message,false);return;}message('vipRedemptionMessage','Solicitação cancelada; pontos liberados.');await loadVip();}));
+      if(configResult.data)$('#vipPointsPerReal').value=Number(configResult.data.pontos_por_real);
+    }
+    $('#generateVipCode').addEventListener('click',()=>$('#vipClientCode').value=vipCode());
+    $('#vipClientCode').addEventListener('input',()=>$('#vipClientCode').value=$('#vipClientCode').value.toUpperCase().replace(/[^A-Z0-9_-]/g,''));
+    $('#vipDiscountType').addEventListener('change',()=>{$('#vipDiscountValue').max=$('#vipDiscountType').value==='percentual'?'100':'';if($('#vipDiscountType').value==='nenhum')$('#vipDiscountValue').value='0';});
+    $('#cancelVipClientEdit').addEventListener('click',()=>{resetVipClientForm();message('vipClientMessage','Edição cancelada.');});
+    $('#vipClientForm').addEventListener('submit',async e=>{
+      e.preventDefault();message('vipClientMessage','Salvando cliente VIP...');
+      const phone=$('#vipClientPhone').value.trim(),digits=normalizePhone(phone),type=$('#vipDiscountType').value,value=Number($('#vipDiscountValue').value||0);
+      const payload={nome:$('#vipClientName').value.trim(),whatsapp:phone,whatsapp_normalizado:digits,codigo:$('#vipClientCode').value.trim().toUpperCase(),desconto_tipo:type,desconto_valor:type==='nenhum'?0:value,ativo:$('#vipClientActive').checked,observacoes:$('#vipClientNotes').value.trim()||null};
+      if(digits.length<10||digits.length>11){message('vipClientMessage','Informe um WhatsApp com DDD válido.',false);return;}
+      if(!/^[A-Z0-9_-]{6,30}$/.test(payload.codigo)){message('vipClientMessage','O código deve ter de 6 a 30 caracteres (letras, números, hífen ou sublinhado).',false);return;}
+      if(type==='percentual'&&(value<=0||value>100)||type==='fixo'&&value<=0){message('vipClientMessage','Informe um desconto válido.',false);return;}
+      const wasEditing=Boolean(editingVipClientId);
+      const result=wasEditing?await sb.from('alcapone_clientes_vip').update(payload).eq('id',editingVipClientId):await sb.from('alcapone_clientes_vip').insert(payload);
+      if(result.error){message('vipClientMessage',result.error.message.includes('duplicate key')?'Este WhatsApp ou código já está cadastrado.':result.error.message,false);return;}
+      resetVipClientForm();message('vipClientMessage',wasEditing?'Cadastro atualizado.':'Cliente VIP cadastrado. Entregue o código e confirme o WhatsApp com o cliente.');await loadVip();
+    });
+    $('#vipHoursForm').addEventListener('submit',async e=>{
+      e.preventDefault();const start=$('#vipHourStart').value,end=$('#vipHourEnd').value;if(end<=start){message('vipHoursMessage','O horário final precisa ser posterior ao inicial.',false);return;}
+      const {error}=await sb.from('alcapone_vip_horarios').insert({profissional_id:$('#vipHourPro').value,data:$('#vipHourDate').value,hora_inicio:start,hora_fim:end,descricao:$('#vipHourDescription').value.trim()||null,ativo:true});
+      if(error){message('vipHoursMessage',error.message,false);return;}message('vipHoursMessage','Horário exclusivo cadastrado.');e.target.reset();$('#vipHourDate').value=today();$('#vipHourStart').value='08:00';$('#vipHourEnd').value='09:00';await loadVip();
+    });
+    $('#vipPointsForm').addEventListener('submit',async e=>{e.preventDefault();const value=Number($('#vipPointsPerReal').value);if(!Number.isFinite(value)||value<=0||value>1000){message('vipPointsMessage','Informe uma taxa entre 0,01 e 1.000 pontos por real.',false);return;}const {error}=await sb.from('alcapone_vip_pontos_config').upsert({id:true,pontos_por_real:value,atualizado_em:new Date().toISOString()},{onConflict:'id'});if(error){message('vipPointsMessage',error.message,false);return;}message('vipPointsMessage','Regra de pontuação atualizada.');});
+    $('#vipRewardForm').addEventListener('submit',async e=>{e.preventDefault();const points=Number($('#vipRewardPoints').value);if(!Number.isInteger(points)||points<1){message('vipRewardMessage','Informe uma pontuação inteira maior que zero.',false);return;}const {error}=await sb.from('alcapone_vip_recompensas').insert({nome:$('#vipRewardName').value.trim(),descricao:$('#vipRewardDescription').value.trim()||null,pontos_necessarios:points,ativo:$('#vipRewardActive').checked});if(error){message('vipRewardMessage',error.message,false);return;}e.target.reset();$('#vipRewardActive').checked=true;message('vipRewardMessage','Recompensa cadastrada.');await loadVip();});
+    $('#vipOfferDiscountType').addEventListener('change',()=>{if($('#vipOfferDiscountType').value==='nenhum')$('#vipOfferDiscountValue').value='0';$('#vipOfferDiscountValue').max=$('#vipOfferDiscountType').value==='percentual'?'100':'';});
+    $('#vipOfferType').addEventListener('change',()=>{if($('#vipOfferType').value==='combo'){$('#vipOfferDiscountType').value='nenhum';$('#vipOfferDiscountValue').value='0';$('#vipOfferDiscountType').disabled=true;$('#vipOfferDiscountValue').disabled=true;}else{$('#vipOfferDiscountType').disabled=false;$('#vipOfferDiscountValue').disabled=false;}});
+    $('#vipOfferForm').addEventListener('submit',async e=>{e.preventDefault();const type=$('#vipOfferDiscountType').value,value=Number($('#vipOfferDiscountValue').value||0);if($('#vipOfferEnd').value<$('#vipOfferStart').value){message('vipOfferMessage','Confira o período da oferta.',false);return;}if(type==='percentual'&&(value<=0||value>100)||type==='fixo'&&value<=0){message('vipOfferMessage','Informe um desconto válido.',false);return;}const {error}=await sb.from('alcapone_vip_ofertas').insert({titulo:$('#vipOfferTitle').value.trim(),descricao:$('#vipOfferDescription').value.trim(),tipo:$('#vipOfferType').value,servico_id:$('#vipOfferService').value||null,desconto_tipo:type,desconto_valor:type==='nenhum'?0:value,data_inicio:$('#vipOfferStart').value,data_fim:$('#vipOfferEnd').value,ativo:$('#vipOfferActive').checked});if(error){message('vipOfferMessage',error.message,false);return;}e.target.reset();$('#vipOfferActive').checked=true;$('#vipOfferType').value='promocao';$('#vipOfferDiscountType').disabled=false;$('#vipOfferDiscountValue').disabled=false;$('#vipOfferDiscountType').value='nenhum';$('#vipOfferDiscountValue').value='0';$('#vipOfferStart').value=today();$('#vipOfferEnd').value=today();message('vipOfferMessage','Oferta VIP cadastrada.');await loadVip();});
+
     async function openReschedule(b){
       rescheduleBooking=b;
       $('#rescheduleId').value=b.id;$('#rescheduleClient').textContent=`${b.cliente_nome} · ${timeBR(b.inicio)} · ${b.id.slice(0,8).toUpperCase()}`;
@@ -723,7 +891,7 @@
       el.innerHTML='<option value="">CONSULTANDO...</option>';
       try{
         const slots=await rpc('alcapone_disponibilidade',{p_profissional_id:pro,p_servico_id:rescheduleBooking.servico_id,p_data:date});
-        el.innerHTML=(slots||[]).map(x=>`<option value="${esc(x.hora)}">${esc(x.hora)}</option>`).join('')||'<option value="">SEM HORÁRIOS</option>';
+        el.innerHTML=(slots||[]).map(x=>`<option value="${esc(x.hora)}">${esc(x.hora)}${x.vip_exclusivo?' · VIP':''}</option>`).join('')||'<option value="">SEM HORÁRIOS</option>';
       }catch(e){el.innerHTML='<option value="">ERRO AO CONSULTAR</option>';message('globalMessage',e.message,false);}
     }
     ['reschedulePro','rescheduleDate'].forEach(id=>$('#'+id).addEventListener('change',loadRescheduleSlots));
@@ -740,6 +908,9 @@
 
     $('#blockDate').min=today();$('#manualDate').min=today();
     resetCouponForm();
+    resetVipClientForm();
+    $('#vipHourDate').min=today();$('#vipHourDate').max=datePlusDays(today(),60);$('#vipHourDate').value=today();
+    $('#vipOfferStart').value=today();$('#vipOfferEnd').value=today();
     const {data:{session}}=await sb.auth.getSession();
     if(session){try{await showPanel();}catch(e){message('loginMessage',e.message,false);}}
   })();

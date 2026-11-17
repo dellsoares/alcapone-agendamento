@@ -30,6 +30,15 @@
         <div class="booking-shell" id="formulario">
           <div class="shell-header"><div><span class="micro">AL CAPONE / RESERVAS</span><h2>AGENDE SEU<br><em>PRÓXIMO HORÁRIO.</em></h2></div><div class="shell-mark">AC</div></div>
           <div class="demo-banner" id="demoBanner" hidden><strong>SEM CONEXÃO</strong><span>Não foi possível conectar ao banco de agendamentos.</span></div>
+          <section class="vip-access" aria-label="Acesso de cliente VIP">
+            <button id="vipToggle" class="vip-toggle" type="button" aria-expanded="false" aria-controls="vipAccessPanel"><span><strong>CLIENTE VIP?</strong><small>ACESSE SEUS BENEFÍCIOS E HORÁRIOS EXCLUSIVOS</small></span><b>+</b></button>
+            <div id="vipAccessPanel" class="vip-access-panel" hidden>
+              <p>Informe o código individual e o WhatsApp cadastrado para liberar seus benefícios.</p>
+              <div class="vip-entry-grid"><div><label for="vipPhone">WHATSAPP CADASTRADO</label><input id="vipPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="25" placeholder="(31) 99999-9999"></div><div><label for="vipCode">CÓDIGO VIP</label><input id="vipCode" type="text" maxlength="30" autocapitalize="characters" placeholder="VIP-XXXXXXXX"></div><button id="validateVip" type="button">ACESSAR VIP ↗</button></div>
+              <p id="vipMessage" class="vip-message" role="status" aria-live="polite"></p>
+              <div id="vipDashboard" class="vip-dashboard" hidden></div>
+            </div>
+          </section>
           <ol class="steps" id="steps" aria-label="Etapas da reserva">
             <li class="active" data-step="1"><span>01</span><small>SERVIÇO</small></li>
             <li data-step="2"><span>02</span><small>PROFISSIONAL</small></li>

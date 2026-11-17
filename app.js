@@ -8,6 +8,7 @@
   const esc = s => String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const brl = cents => (cents/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
   const todayBR = () => new Intl.DateTimeFormat('sv-SE',{timeZone:'America/Sao_Paulo',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const normalizePhone = value => {let d=String(value||'').replace(/\D/g,'');if((d.length===12||d.length===13)&&d.startsWith('55'))d=d.slice(2);return d;};
   const addDays = (iso, days) => {const d=new Date(iso+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
   const weekday = iso => new Date(iso+'T12:00:00Z').toLocaleDateString('pt-BR',{weekday:'short',timeZone:'UTC'}).replace('.','').toUpperCase();
   const formattedDate = iso => new Date(iso+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',day:'2-digit',month:'long',year:'numeric'});
@@ -22,7 +23,7 @@
     return payload;
   }
   let data=null,step=1,dateOffset=0,fetching=0;
-  const booking={service_id:null, professional_id:null, date:null, time:null, coupon:null};
+  const booking={service_id:null, professional_id:null, date:null, time:null, coupon:null, vip:null};
   const state=()=>({service:data.services.find(x=>x.id===booking.service_id),pro:data.professionals.find(x=>x.id===booking.professional_id)});
   $('#currentYear').textContent=new Date().getFullYear();
   async function init(){
@@ -65,7 +66,7 @@
     $$('.steps li').forEach(el=>{const s=Number(el.dataset.step);el.classList.toggle('active',s===Math.min(n,4));el.classList.toggle('done',s<Math.min(n,4))});
     $('#wizardFooter').hidden=n===5;
     $('#backBtn').hidden=n<=1;
-    if(n===3){renderDates();loadAvailability();}
+    if(n===3){renderDates();if(booking.date)loadAvailability();else $('#slotArea').innerHTML='<p class="empty-note">Selecione uma data para consultar os horários.</p>';}
     if(n===4)renderSummary();
     updateNext();
     if(n===5)$('#formulario').scrollIntoView({block:'start',behavior:'smooth'});
@@ -88,7 +89,7 @@
     let html='';
     for(let i=0;i<7;i++){
       const iso=addDays(current,i),wd=new Date(iso+'T12:00:00Z').getUTCDay();
-      const closed=wd===0||wd===1,out=iso>last;
+      const closed=(wd===0||wd===1)&&!booking.vip,out=iso>last;
       html+=`<button type="button" class="day-pill ${booking.date===iso?'selected':''}" data-date="${iso}" ${closed||out?'disabled':''} aria-pressed="${booking.date===iso}"><small>${weekday(iso)}</small><strong>${iso.slice(8)}</strong></button>`;
     }
     $('#daysStrip').innerHTML=html;
@@ -101,19 +102,82 @@
     $('#slotArea').innerHTML='<p class="empty-note">Consultando horários...</p>';
     $('#availabilityMeta').textContent=formattedDate(booking.date);
     try{
-      const result=await rpc('alcapone_disponibilidade',{p_profissional_id:booking.professional_id,p_servico_id:booking.service_id,p_data:booking.date});
-      const slots=(result||[]).map(item=>item.hora);
+      const result=await rpc('alcapone_disponibilidade',{p_profissional_id:booking.professional_id,p_servico_id:booking.service_id,p_data:booking.date,p_codigo_vip:booking.vip?.code||null,p_whatsapp:booking.vip?.phone||null});
+      const slots=(result||[]).map(item=>({time:item.hora,vipOnly:Boolean(item.vip_exclusivo)}));
       if(seq!==fetching)return;
       if(!slots.length){$('#slotArea').innerHTML='<p class="empty-note">Sem horários disponíveis. Experimente outra data.</p>';booking.time=null;updateNext();return;}
       let html='';
-      for(const [title,items] of [['MANHÃ',slots.filter(s=>s<'12:00')],['TARDE',slots.filter(s=>s>='12:00')]]){
+      for(const [title,items] of [['MANHÃ',slots.filter(s=>s.time<'12:00')],['TARDE',slots.filter(s=>s.time>='12:00')]]){
         if(!items.length)continue;
-        html+=`<div class="period-label">${title}</div><div class="time-buttons">${items.map(s=>`<button type="button" class="time-slot ${booking.time===s?'selected':''}" data-time="${esc(s)}" aria-pressed="${booking.time===s}">${esc(s)}</button>`).join('')}</div>`;
+        html+=`<div class="period-label">${title}</div><div class="time-buttons">${items.map(s=>`<button type="button" class="time-slot ${booking.time===s.time?'selected':''}" data-time="${esc(s.time)}" aria-pressed="${booking.time===s.time}">${esc(s.time)}${s.vipOnly?'<small class="vip-slot-tag">VIP</small>':''}</button>`).join('')}</div>`;
       }
       $('#slotArea').innerHTML=html;
       $$('.time-slot').forEach(el=>el.addEventListener('click',()=>{booking.time=el.dataset.time;$$('.time-slot').forEach(e=>{e.classList.toggle('selected',e===el);e.setAttribute('aria-pressed',String(e===el))});updateNext()}));
     }catch(e){if(seq===fetching)$('#slotArea').innerHTML=`<p class="empty-note">${esc(e.message)}. Tente outra data ou recarregue a página.</p>`;}
   }
+  function setVipMessage(text,type=''){
+    const el=$('#vipMessage');if(!el)return;el.textContent=text||'';el.classList.toggle('success',type==='success');el.classList.toggle('error',type==='error');
+  }
+  function vipDiscountFor(service){
+    if(!booking.vip||!service)return 0;
+    let best=0;const profile=booking.vip;
+    if(profile.discount_type==='percentual')best=service.price_cents/100*Number(profile.discount_value||0)/100;
+    else if(profile.discount_type==='fixo')best=Math.min(service.price_cents/100,Number(profile.discount_value||0));
+    (profile.offers||[]).forEach(o=>{
+      if(o.type==='combo')return;
+      if(o.service_id&&o.service_id!==service.id)return;
+      const today=data?.today||todayBR();if(today<o.start_date||today>o.end_date)return;
+      let amount=0;if(o.discount_type==='percentual')amount=service.price_cents/100*Number(o.discount_value||0)/100;
+      else if(o.discount_type==='fixo')amount=Math.min(service.price_cents/100,Number(o.discount_value||0));
+      best=Math.max(best,amount);
+    });
+    return Math.min(service.price_cents/100,best);
+  }
+  function renderVipDashboard(){
+    const el=$('#vipDashboard');if(!booking.vip){el.hidden=true;el.innerHTML='';return;}
+    const v=booking.vip,discountType=v.discount_type==='percentual'?`${Number(v.discount_value).toLocaleString('pt-BR')}%`:v.discount_type==='fixo'?brl(Math.round(Number(v.discount_value)*100)):'Benefícios ativos';
+    const offers=(v.offers||[]).map(o=>`<div class="vip-offer"><strong>${esc(o.title)} · ${o.type==='combo'?'COMBO':'PROMOÇÃO'}</strong><p>${esc(o.description)}</p>${o.type==='promocao'&&o.discount_type!=='nenhum'?`<small>Benefício: ${o.discount_type==='percentual'?`${Number(o.discount_value).toLocaleString('pt-BR')}%`:brl(Math.round(Number(o.discount_value)*100))}</small>`:''}</div>`).join('');
+    const rewards=(v.rewards||[]).map(r=>`<div class="vip-reward"><div><strong>${esc(r.name)} · ${Number(r.points)} PONTOS</strong><p>${esc(r.description||'')}</p></div><button type="button" data-vip-reward="${esc(r.id)}" ${r.can_redeem?'':'disabled'}>${r.can_redeem?'SOLICITAR':'PONTOS INSUFICIENTES'}</button></div>`).join('');
+    el.innerHTML=`<div class="vip-dashboard-head"><strong>OLÁ, ${esc(v.client_name)}.</strong><span>ACESSO VIP ATIVO</span><button type="button" class="vip-logout" data-vip-logout>SAIR DA ÁREA VIP</button></div><div class="vip-metrics"><div class="vip-metric"><strong>${Number(v.points_available||0)}</strong><small>PONTOS DISPONÍVEIS</small></div><div class="vip-metric"><strong>${esc(discountType)}</strong><small>DESCONTO VIP</small></div><div class="vip-metric"><strong>${(v.offers||[]).length}</strong><small>OFERTAS ATIVAS</small></div></div><p>Seu código VIP libera horários especiais e benefícios durante o agendamento. Os pontos são creditados após o atendimento ser concluído.</p>${offers?`<strong class="micro">PROMOÇÕES E COMBOS</strong><div class="vip-offer-list">${offers}</div>`:''}${rewards?`<strong class="micro" style="display:block;margin-top:14px">TROQUE SEUS PONTOS</strong><div class="vip-reward-list">${rewards}</div>`:''}`;
+    el.hidden=false;
+    $('[data-vip-logout]',el).addEventListener('click',()=>clearVip('Acesso VIP encerrado.'));
+    $$('[data-vip-reward]',el).forEach(btn=>btn.addEventListener('click',async()=>{
+      if(!booking.vip)return;btn.disabled=true;btn.textContent='ENVIANDO...';
+      try{const result=await rpc('alcapone_vip_solicitar_resgate',{p_codigo:booking.vip.code,p_whatsapp:booking.vip.phone,p_recompensa_id:btn.dataset.vipReward});await validateVip(true);setVipMessage(result?.message||'Solicitação enviada.','success');}
+      catch(e){setVipMessage(e.message,'error');btn.disabled=false;btn.textContent='SOLICITAR';}
+    }));
+  }
+  async function validateVip(silent=false){
+    const code=$('#vipCode').value.trim().toUpperCase(),phone=$('#vipPhone').value.trim();
+    if(!code||phone.replace(/\D/g,'').length<10){setVipMessage('Informe o código VIP e o WhatsApp cadastrado.','error');return;}
+    const button=$('#validateVip');button.disabled=true;button.textContent='VALIDANDO...';
+    if(!silent)setVipMessage('Validando seu acesso...');
+    try{
+      const result=await rpc('alcapone_validar_vip',{p_codigo:code,p_whatsapp:phone});
+      if(!result?.valid)throw new Error(result?.message||'Não foi possível validar o acesso VIP.');
+      const phoneDigits=normalizePhone(phone);
+      booking.vip={...result,code:result.code||code,phone:phoneDigits};
+      if(booking.coupon){booking.coupon=null;$('#clientCouponCode').value='';setCouponMessage('Benefício VIP ativo. Cupons não são acumulados com descontos VIP.');}
+      $('#clientPhone').value=phone;
+      if(result.client_name)$('#clientName').value=result.client_name;
+      setVipMessage(result.message||'Acesso VIP liberado.','success');renderVipDashboard();
+      if(step===3){renderDates();loadAvailability();}if(step===4)renderSummary();
+    }catch(e){const hadVip=Boolean(booking.vip);booking.vip=null;renderVipDashboard();setVipMessage(e.message,'error');if(hadVip&&step===3){booking.time=null;if(booking.date&&[0,1].includes(new Date(booking.date+'T12:00:00Z').getUTCDay()))booking.date=null;renderDates();if(booking.date)loadAvailability();else $('#slotArea').innerHTML='<p class="empty-note">Selecione uma data para consultar os horários.</p>';updateNext();}if(hadVip&&step===4){booking.time=null;if(booking.date&&[0,1].includes(new Date(booking.date+'T12:00:00Z').getUTCDay()))booking.date=null;go(3);}}
+    finally{button.disabled=false;button.textContent='ACESSAR VIP ↗';}
+  }
+  function clearVip(message=''){
+    if(!booking.vip)return;booking.vip=null;renderVipDashboard();setVipMessage(message,'');
+    if(step===3){booking.time=null;if(booking.date&&[0,1].includes(new Date(booking.date+'T12:00:00Z').getUTCDay()))booking.date=null;renderDates();if(booking.date)loadAvailability();else $('#slotArea').innerHTML='<p class="empty-note">Selecione uma data para consultar os horários.</p>';updateNext();}
+    if(step===4){booking.time=null;if(booking.date&&[0,1].includes(new Date(booking.date+'T12:00:00Z').getUTCDay()))booking.date=null;go(3);}
+  }
+  $('#vipToggle').addEventListener('click',()=>{
+    const panel=$('#vipAccessPanel'),open=panel.hidden;panel.hidden=!open;$('#vipToggle').setAttribute('aria-expanded',String(open));$('#vipToggle b').textContent=open?'−':'+';
+  });
+  $('#vipCode').addEventListener('input',()=>{const v=$('#vipCode').value.toUpperCase().replace(/[^A-Z0-9_-]/g,'');$('#vipCode').value=v;if(booking.vip&&v!==booking.vip.code)clearVip('Código alterado. Valide novamente.');});
+  $('#vipPhone').addEventListener('input',()=>{if(booking.vip&&normalizePhone($('#vipPhone').value)!==booking.vip.phone)clearVip('WhatsApp alterado. Valide novamente.');});
+  $('#validateVip').addEventListener('click',()=>validateVip());
+  $('#clientPhone').addEventListener('input',()=>{if(booking.vip&&normalizePhone($('#clientPhone').value)!==booking.vip.phone)clearVip('WhatsApp alterado. O acesso VIP foi removido.');});
+
   function setCouponMessage(text,type=''){
     const el=$('#couponMessage');if(!el)return;
     el.textContent=text||'';el.classList.toggle('success',type==='success');el.classList.toggle('error',type==='error');
@@ -126,6 +190,7 @@
   $('#applyCoupon').addEventListener('click',async()=>{
     const code=$('#clientCouponCode').value.trim().toUpperCase();
     const phone=$('#clientPhone').value.trim();
+    if(booking.vip){setCouponMessage('O benefício VIP não é acumulado com cupons. Remova o acesso VIP para usar este cupom.','error');return;}
     const phoneDigits=phone.replace(/\D/g,'');
     const serviceId=booking.service_id;
     if(!code){setCouponMessage('Digite o código do cupom.','error');return;}
@@ -149,11 +214,14 @@
   });
   function renderSummary(){
     const {service,pro}=state();
-    const discountCents=booking.coupon?Math.round(Number(booking.coupon.discount_amount)*100):0;
+    const vipDiscount=booking.vip?vipDiscountFor(service):0;
+    const couponDiscount=booking.coupon?Number(booking.coupon.discount_amount):0;
+    const discountCents=Math.round((booking.vip?vipDiscount:couponDiscount)*100);
     const totalCents=Math.max(0,service.price_cents-discountCents);
-    const couponRows=booking.coupon?`<div class="summary-row"><span>VALOR ORIGINAL</span><strong>${brl(service.price_cents)}</strong></div><div class="summary-row"><span>CUPOM</span><strong>${esc(booking.coupon.code)}</strong></div><div class="summary-row"><span>DESCONTO</span><strong>− ${brl(discountCents)}</strong></div>`:'';
-    const totalLabel=booking.coupon?'VALOR FINAL':`VALOR ${service.from_price?'INICIAL':'DO SERVIÇO'}`;
-    $('#summary').innerHTML=`<div class="summary-row"><span>SERVIÇO</span><strong>${esc(service.name)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(pro.name)}</strong></div><div class="summary-row"><span>DATA E HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div><div class="summary-row"><span>DURAÇÃO</span><strong>${service.duration} minutos</strong></div>${couponRows}<div class="summary-row summary-total"><span>${totalLabel}</span><strong>${brl(totalCents)}</strong></div>`;
+    const benefitRows=discountCents>0?`<div class="summary-row"><span>VALOR ORIGINAL</span><strong>${brl(service.price_cents)}</strong></div><div class="summary-row"><span>${booking.vip?'BENEFÍCIO VIP':`CUPOM ${esc(booking.coupon.code)}`}</span><strong>− ${brl(discountCents)}</strong></div>`:'';
+    const totalLabel=discountCents>0?'VALOR FINAL':`VALOR ${service.from_price?'INICIAL':'DO SERVIÇO'}`;
+    const vipTag=booking.vip?`<div class="summary-row"><span>ACESSO</span><strong>CLIENTE VIP · ${esc(booking.vip.code)}</strong></div>`:'';
+    $('#summary').innerHTML=`<div class="summary-row"><span>SERVIÇO</span><strong>${esc(service.name)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(pro.name)}</strong></div><div class="summary-row"><span>DATA E HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div><div class="summary-row"><span>DURAÇÃO</span><strong>${service.duration} minutos</strong></div>${vipTag}${benefitRows}<div class="summary-row summary-total"><span>${totalLabel}</span><strong>${brl(totalCents)}</strong></div>`;
     $('#formError').hidden=true;
   }
   function calendarDateParts(date, time, duration){
@@ -210,9 +278,10 @@
     const finalPriceCents=Math.round(Number(payload.final_price ?? service.price_cents/100)*100);
     const discountCents=Math.round(Number(payload.discount_amount||0)*100);
     const valueLabel=`${service.from_price?'A partir de ':''}${brl(finalPriceCents)}`;
-    const couponLine=payload.coupon_code?`\nValor original: ${brl(service.price_cents)}\nCupom: ${payload.coupon_code}\nDesconto: ${brl(discountCents)}`:'';
+    const couponLine=payload.coupon_code?`\nCupom: ${payload.coupon_code}\nDesconto: ${brl(discountCents)}`:payload.discount_source==='vip'?`\nBenefício: Cliente VIP\nDesconto: ${brl(discountCents)}`:'';
+    const vipLine=payload.vip_code?'\nCliente VIP: pontos serão creditados após o atendimento concluído.':'';
     const manageUrl=new URL(`minha.html?token=${encodeURIComponent(payload.token)}`,locationHref()).href;
-    const message=`AGENDAMENTO CONFIRMADO — AL CAPONE BARBEARIA\n\nHora: ${booking.time}\nData: ${dateLabel}\nProfissional: ${professional.name}\nServiço: ${service.name}\nValor: ${valueLabel}${couponLine}\n\nCódigo da reserva: ${code}\nConsultar ou cancelar: ${manageUrl}`;
+    const message=`AGENDAMENTO CONFIRMADO — AL CAPONE BARBEARIA\n\nHora: ${booking.time}\nData: ${dateLabel}\nProfissional: ${professional.name}\nServiço: ${service.name}\nValor: ${valueLabel}${couponLine}${vipLine}\n\nCódigo da reserva: ${code}\nConsultar ou cancelar: ${manageUrl}`;
     $('#whatsappSummary').href=`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
     $('#whatsappSummary').setAttribute('aria-label','Abrir uma conversa com seu próprio número no WhatsApp, com o resumo do agendamento preenchido. Você só precisa tocar em Enviar.');
   }
@@ -231,12 +300,13 @@
         p_profissional_id:booking.professional_id,p_servico_id:booking.service_id,
         p_data:booking.date,p_hora:booking.time,p_nome:fullName,p_whatsapp:phone,
         p_email:email||null,p_observacoes:$('#clientNotes').value.trim()||null,
-        p_cupom:booking.coupon?.code||null
+        p_cupom:booking.coupon?.code||null,p_codigo_vip:booking.vip?.code||null
       });
       const finalPriceCents=Math.round(Number(payload.final_price ?? state().service.price_cents/100)*100);
       const discountCents=Math.round(Number(payload.discount_amount||0)*100);
-      const couponInfo=payload.coupon_code?`<div class="summary-row"><span>VALOR ORIGINAL</span><strong>${brl(state().service.price_cents)}</strong></div><div class="summary-row"><span>CUPOM</span><strong>${esc(payload.coupon_code)}</strong></div><div class="summary-row"><span>DESCONTO</span><strong>− ${brl(discountCents)}</strong></div>`:'';
-      $('#confirmationInfo').innerHTML=`<div class="summary-row"><span>CÓDIGO</span><strong>${esc(payload.code)}</strong></div><div class="summary-row"><span>SERVIÇO</span><strong>${esc(payload.service)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(payload.professional)}</strong></div><div class="summary-row"><span>DATA/HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div>${couponInfo}<div class="summary-row summary-total"><span>VALOR FINAL</span><strong>${brl(finalPriceCents)}</strong></div>`;
+      const benefitInfo=discountCents>0?`<div class="summary-row"><span>BENEFÍCIO</span><strong>${payload.coupon_code?`CUPOM ${esc(payload.coupon_code)}`:payload.discount_source==='vip'?'CLIENTE VIP':'DESCONTO'}</strong></div><div class="summary-row"><span>DESCONTO</span><strong>− ${brl(discountCents)}</strong></div>`:'';
+      const vipInfo=payload.vip_code?`<div class="summary-row"><span>FIDELIDADE</span><strong>CLIENTE VIP · PONTOS APÓS O ATENDIMENTO</strong></div>`:'';
+      $('#confirmationInfo').innerHTML=`<div class="summary-row"><span>CÓDIGO</span><strong>${esc(payload.code)}</strong></div><div class="summary-row"><span>SERVIÇO</span><strong>${esc(payload.service)}</strong></div><div class="summary-row"><span>PROFISSIONAL</span><strong>${esc(payload.professional)}</strong></div><div class="summary-row"><span>DATA/HORA</span><strong>${esc(formattedDate(booking.date))} · ${esc(booking.time)}</strong></div>${vipInfo}${benefitInfo}<div class="summary-row summary-total"><span>VALOR FINAL</span><strong>${brl(finalPriceCents)}</strong></div>`;
       $('#manageLink').href='minha.html?token='+encodeURIComponent(payload.token);
       prepareConfirmationActions({payload,service:state().service,professional:state().pro,clientName:fullName,phone});
       go(5);
